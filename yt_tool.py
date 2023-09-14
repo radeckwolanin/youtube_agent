@@ -17,7 +17,7 @@ Input to this tool should be a comma separated list,
  - the first part contains a person name
  - and the second(optional) a number that is the maximum number of video results to return
 '''
-class CustomYTSearchTool(BaseTool):
+class CustomYTSearchTool(BaseTool): 
     name = "CustomYTSearch"
     description = "search for youtube videos associated with a person. the input to this tool should be a comma separated list, the first part contains a person name and the second a number that is the maximum number of video results to return aka num_results. the second part is optional"
 
@@ -89,4 +89,4 @@ if __name__ == "__main__":
     tools.append(CustomYTTranscribeTool())
     
     agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-    agent.run("search youtube for Laszlo Bock's youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
+    agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
