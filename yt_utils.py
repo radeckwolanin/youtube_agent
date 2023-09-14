@@ -16,7 +16,6 @@ import os
 import numpy as np
 
 from pytube import YouTube
-import torch
 import time
 
 
@@ -32,7 +31,6 @@ def yt_get(yt_url):
     vpath = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
     print(f"Downloaded video {vpath}")
     return vpath
-
 
 def yt_transcribe(video_url):
     print(f"transcribing {video_url}")

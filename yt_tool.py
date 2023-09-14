@@ -1,15 +1,20 @@
 #Import things that are needed generically
+import os
+from dotenv import load_dotenv
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
 from langchain.agents import AgentType, Tool, initialize_agent, tool
 from langchain.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
+from langchain.document_loaders import YoutubeLoader
 
 from typing import Type
 from youtube_search import YoutubeSearch
 import json
 from yt_utils import yt_get, yt_transcribe
 
+load_dotenv() # Load environment variables from .env file
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Get API key from environment variable
 
 '''
 CustomYTSearchTool searches YouTube videos related to a person and returns a specified number of video URLs.
@@ -59,9 +64,16 @@ class CustomYTTranscribeTool(BaseTool):
         transcriptions = {}
 
         for vurl in url_set:
-            vpath = yt_get(vurl)
+            #vpath = yt_get(vurl)
+            vpath = "https://youtube.com"+vurl
 
-            transcription = yt_transcribe(vpath)
+            #transcription = yt_transcribe(vpath)
+            print("vurl: "+vurl+"\nvpath: "+vpath+"\n\n")            
+            loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
+            result = loader.load()
+            
+            transcription = result[0].page_content
+            
             transcriptions[vurl]=transcription
 
             print(f"transcribed {vpath} into :\n {transcription}")
