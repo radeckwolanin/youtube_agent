@@ -26,11 +26,14 @@ model = load_model()
 
 
 def yt_get(yt_url):
+    """
     yt = YouTube("https://youtube.com"+ yt_url,use_oauth=True, allow_oauth_cache=True)
     print(f"youtube to be downloadd - {yt}")
     vpath = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
     print(f"Downloaded video {vpath}")
     return vpath
+    """
+    return "https://youtube.com"+ yt_url
 
 def yt_transcribe(video_url):
     print(f"transcribing {video_url}")
