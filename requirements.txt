@@ -6,3 +6,5 @@ pandas
 yt-dlp
 whisper
 pytube
+python-dotenv
+youtube-transcript-api
