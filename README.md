@@ -1,7 +1,7 @@
 # youtube_agent
 YouTube agent that ingest videos and creates something out of it (Tweets, newsletter, blog etc.)
 
-Installation
+# Installation
 conda create -n ytAgentEnv
 conda activate ytAgentEnv
 conda install pip
