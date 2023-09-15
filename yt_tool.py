@@ -93,7 +93,13 @@ class CustomYTTranscribeTool(BaseTool):
 '''
 SummarizationTool summarizes any text and saves it to the file.
 '''
+"""
+TODO:
+- Check if summary already exists in database
+- Use RecursiveCharacterTextSplitter to split each transcript
+- Run map_reduce chain to summarize each transcript
 
+"""
 class SummarizationTool(BaseTool):
     name = "SummarizationTool"
     description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized."
@@ -105,12 +111,12 @@ class SummarizationTool(BaseTool):
                 with open(input_file, 'r') as file:
                     data = json.load(file)
                 print("File loaded successfully as JSON:")
-                #print(data)
                 
                 if isinstance(data, dict):
                     # If the data is a dictionary
                     for key, value in data.items():
                         print(f"Key: {key}, Value: {value}")
+                        # TODO - finish from here
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
