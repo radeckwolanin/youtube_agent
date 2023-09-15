@@ -98,29 +98,27 @@ class SummarizationTool(BaseTool):
     name = "SummarizationTool"
     description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized."
 
-    def _summarize(self, url_csv:str) -> str:
-        values_list = url_csv.split(",")
-        url_set = set(values_list)
-        datatype = type(url_set)
-        print(f"[YTTRANSCIBE***], received type {datatype} = {url_set}")
-
-        transcriptions = {}
-
-        for vurl in url_set:
-            vpath = yt_get(vurl)
-                      
-            loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
-            result = loader.load()
-            
-            transcription = result[0].page_content
-            
-            transcriptions[vurl]=transcription
-
-            print(f"transcribed {vpath} into :\n {transcription}")
-
-        with open("transcriptions.json", "w") as json_file:
-            json.dump(transcriptions, json_file)
-            
+    def _summarize(self, input_file:str) -> str:
+        
+        if os.path.exists(input_file):
+            try:
+                with open(input_file, 'r') as file:
+                    data = json.load(file)
+                print("File loaded successfully as JSON:")
+                #print(data)
+                
+                if isinstance(data, dict):
+                    # If the data is a dictionary
+                    for key, value in data.items():
+                        print(f"Key: {key}, Value: {value}")
+                        
+            except json.JSONDecodeError as e:
+                print(f"Error loading JSON: {e}")
+                raise NotImplementedError(f"Error loading JSON: {e}")
+        else:
+            print(f"The file '{input_file}' does not exist.")
+            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
+        
         return
     
     def _run(self, query: str) -> str:
