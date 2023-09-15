@@ -151,5 +151,6 @@ if __name__ == "__main__":
     #agent.run("use transcription from transcriptions.json and summarize it")
     db = get_vector_store("you_tube")
     query = "Are there any news related to Joe Biden?"
-    docs = db.similarity_search(query)
-    print(docs[0].page_content)
+    docs = db.similarity_search(query,2)
+    #print(docs[0].page_content)
+    print(docs)
