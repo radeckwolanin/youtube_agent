@@ -8,3 +8,4 @@ whisper
 pytube
 python-dotenv
 youtube-transcript-api
+chromadb
