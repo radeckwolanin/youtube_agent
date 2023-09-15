@@ -52,7 +52,7 @@ saves the transcriptions in transcriptions.json in your current directory
 '''
 
 class CustomYTTranscribeTool(BaseTool):
-    name = "CustomeYTTranscribe"
+    name = "CustomYTTranscribe"
     description = "transcribe youtube videos associated with someone"
 
     def _summarize(self, url_csv:str) -> str:
@@ -65,10 +65,6 @@ class CustomYTTranscribeTool(BaseTool):
 
         for vurl in url_set:
             vpath = yt_get(vurl)
-            #vpath = "https://youtube.com"+(vurl[1:])
-
-            #transcription = yt_transcribe(vpath)
-            print("vurl: "+vurl+"\nvpath: "+vpath[1:-1]+"\n\n")  
                       
             loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
             result = loader.load()

@@ -18,26 +18,19 @@ import numpy as np
 from pytube import YouTube
 import time
 
-
+"""
 def load_model():
     return whisper.load_model("base")
 
 model = load_model()
-
+"""
 
 def yt_get(yt_url):
-    """
-    yt = YouTube("https://youtube.com"+ yt_url,use_oauth=True, allow_oauth_cache=True)
-    print(f"youtube to be downloadd - {yt}")
-    vpath = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
-    print(f"Downloaded video {vpath}")
-    return vpath
-    """
-    return "https://youtube.com"+ yt_url
-
+    stripped_url = yt_url.strip(" '")
+    return "https://youtube.com"+stripped_url
+"""
 def yt_transcribe(video_url):
     print(f"transcribing {video_url}")
     result = model.transcribe(video_url)
     return (result['text'])
-
-    
+"""
