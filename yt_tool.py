@@ -1,6 +1,8 @@
 #Import things that are needed generically
 import os
 from dotenv import load_dotenv
+from langchain.vectorstores import Chroma
+import chromadb
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
 from langchain.agents import AgentType, Tool, initialize_agent, tool
@@ -11,7 +13,7 @@ from langchain.document_loaders import YoutubeLoader
 from typing import Type
 from youtube_search import YoutubeSearch
 import json
-#from yt_utils import yt_get, yt_transcribe
+from yt_utils import get_vector_store #yt_get, yt_transcribe
 
 load_dotenv() # Load environment variables from .env file
 #OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Get API key from environment variable - not needed since load_dotenv()
@@ -118,6 +120,7 @@ class SummarizationTool(BaseTool):
                         print(f"Key: {key}, Value: {value}")
                         # TODO - finish from here
                         
+                        
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
                 raise NotImplementedError(f"Error loading JSON: {e}")
@@ -143,6 +146,10 @@ if __name__ == "__main__":
     tools.append(CustomYTTranscribeTool())
     tools.append(SummarizationTool())
     
-    agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+    #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
     #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
-    agent.run("use transcription from transcriptions.json and summarize it")
+    #agent.run("use transcription from transcriptions.json and summarize it")
+    db = get_vector_store("you_tube")
+    query = "Are there any news related to Joe Biden?"
+    docs = db.similarity_search(query)
+    print(docs[0].page_content)

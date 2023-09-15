@@ -5,18 +5,34 @@ Transcription utilities that generate textual summaries of Youtube videos, given
 
 '''
 
-import whisper
-import datetime
-import subprocess
-from pathlib import Path
-import pandas as pd
-import re
-import time
-import os 
-import numpy as np
+#import whisper
+#import datetime
+#import subprocess
+#from pathlib import Path
+#import pandas as pd
+#import re
+#import time
+#import os 
+#import numpy as np
+
+from langchain.vectorstores import Chroma
+import chromadb
+#from chromadb.utils import embedding_functions
+#import uuid
+from langchain.embeddings import OpenAIEmbeddings
 
 from pytube import YouTube
 import time
+
+def get_vector_store(collection_name):
+    client = chromadb.HttpClient(host="20.115.73.2", port=8000)
+        
+    index = Chroma(
+        client=client,
+        collection_name=collection_name,
+        embedding_function=OpenAIEmbeddings()
+    )
+    return index
 
 """
 def load_model():
