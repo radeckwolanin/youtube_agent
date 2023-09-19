@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 from langchain.vectorstores import Chroma
 import chromadb
+import streamlit as st
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
 from langchain.callbacks.streaming_stdout_final_only import (
@@ -12,6 +13,8 @@ from langchain.callbacks.streaming_stdout_final_only import (
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.agents import AgentType, Tool, initialize_agent, tool, load_tools
 from langchain.chat_models import ChatOpenAI
+from langchain.schema import ChatMessage
+
 from langchain.tools import BaseTool
 from langchain.document_loaders import YoutubeLoader
 
@@ -26,6 +29,15 @@ class MyCallbackHandler(BaseCallbackHandler):
     def on_llm_new_token(self, token, **kwargs) -> None:
         # print every token on a new line
         print(f"#{token}#")
+
+class StreamHandler(BaseCallbackHandler):
+    def __init__(self, container, initial_text=""):
+        self.container = container
+        self.text = initial_text
+
+    def on_llm_new_token(self, token: str, **kwargs) -> None:
+        self.text += token
+        self.container.markdown(self.text)
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.
@@ -148,46 +160,68 @@ class SummarizationTool(BaseTool):
         raise NotImplementedError("SummarizationTool  does not yet support async")
 
 if __name__ == "__main__":
+    with st.sidebar:
+        openai_api_key = st.text_input("OpenAI API Key", type="password")
+
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [ChatMessage(role="assistant", content="How can I help you?")]
+
+    for msg in st.session_state.messages:
+        st.chat_message(msg.role).write(msg.content)
+
+    if prompt := st.chat_input():
+        st.session_state.messages.append(ChatMessage(role="user", content=prompt))
+        st.chat_message("user").write(prompt)
+
+        if not openai_api_key:
+            st.info("Please add your OpenAI API key to continue.")
+            st.stop()
+
+        with st.chat_message("assistant"):
+            stream_handler = StreamHandler(st.empty())
+            llm = ChatOpenAI(openai_api_key=openai_api_key, streaming=True, callbacks=[stream_handler])
+            response = llm(st.session_state.messages)
+            st.session_state.messages.append(ChatMessage(role="assistant", content=response.content))
+    
     #llm = OpenAI(temperature=0)
     # Streaming
-    llm = OpenAI(
+    #llm = OpenAI(
         #streaming=True, callbacks=[FinalStreamingStdOutCallbackHandler()], temperature=0
-        streaming=True, callbacks=[MyCallbackHandler()], temperature=0
-    )
+        #streaming=True, callbacks=[MyCallbackHandler()], temperature=0
+    #)
     
-    #search = SerpAPIWrapper()
-    tools = load_tools(["wikipedia", "serpapi", "llm-math"], llm=llm)
+    #tools = load_tools(["wikipedia", "serpapi", "llm-math"], llm=llm)
     
     #tools = []
-    """
-    tools = [
-        Tool(
-            name = "Search",
-            func=search.run,
-            description="useful for when you need to answer questions about current events"
-        )
-    ]"""
-
-    tools.append(CustomYTSearchTool())
-    tools.append(CustomYTTranscribeTool())
-    tools.append(SummarizationTool())
     
+    #tools.append(CustomYTSearchTool())
+    #tools.append(CustomYTTranscribeTool())
+    #tools.append(SummarizationTool())
+    
+    """
     agent = initialize_agent(
         tools,
         llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
-        #return_intermediate_steps=True,
+        return_intermediate_steps=True,
     )
+    """
+    
+    """
     agent.run(
         "It's 2023 now. How many years ago did Konrad Adenauer become Chancellor of Germany."
     )
+    """
+    
     """
     response = agent(
         {
             "input": "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
         }
-    )"""
+    )    
+    print(response)
+    """
     
     #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
     #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
