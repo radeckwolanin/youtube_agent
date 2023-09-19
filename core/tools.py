@@ -1,5 +1,6 @@
 from langchain.tools import BaseTool
 from youtube_search import YoutubeSearch
+import json
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.

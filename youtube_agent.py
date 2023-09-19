@@ -24,9 +24,9 @@ memory = ConversationBufferMemory(
     output_key="output"
 )
 
-if len(msgs.messages) == 0 or st.sidebar.button("Reset chat history"):
+if len(msgs.messages) == 0 #or st.sidebar.button("Reset chat history"):
     msgs.clear()
-    msgs.add_ai_message("What do you want to me to search YouTube for?")
+    msgs.add_ai_message("What YouTube videos do you want me to search for?")
     st.session_state.steps = {}
 
 avatars = {"human": "user", "ai": "assistant"}
@@ -41,12 +41,13 @@ for idx, msg in enumerate(msgs.messages):
                 st.write(step[1])
         st.write(msg.content)
 
-if prompt := st.chat_input(placeholder="Who won the Women's U.S. Open in 2018?"):
+if prompt := st.chat_input(placeholder="Todays top global news"):
     st.chat_message("user").write(prompt)
 
     llm = ChatOpenAI(model_name="gpt-3.5-turbo", streaming=True)
     
-    tools = [DuckDuckGoSearchRun(name="Search")]
+    #tools = [DuckDuckGoSearchRun(name="Search")]
+    tools = []
     tools.append(CustomYTSearchTool())
     
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
