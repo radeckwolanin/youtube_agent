@@ -5,7 +5,7 @@ from langchain.vectorstores import Chroma
 import chromadb
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
-from langchain.agents import AgentType, Tool, initialize_agent, tool
+from langchain.agents import AgentType, Tool, initialize_agent, tool, load_tools
 from langchain.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
 from langchain.document_loaders import YoutubeLoader
@@ -140,17 +140,47 @@ class SummarizationTool(BaseTool):
 
 if __name__ == "__main__":
     llm = OpenAI(temperature=0)
-    tools = []
+    
+    #search = SerpAPIWrapper()
+    tools = load_tools(["serpapi", "llm-math"], llm=llm)
+    
+    #tools = []
+    """
+    tools = [
+        Tool(
+            name = "Search",
+            func=search.run,
+            description="useful for when you need to answer questions about current events"
+        )
+    ]"""
 
     tools.append(CustomYTSearchTool())
     tools.append(CustomYTTranscribeTool())
     tools.append(SummarizationTool())
     
+    agent = initialize_agent(
+        tools,
+        llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
+        return_intermediate_steps=True,
+    )
+    
+    response = agent(
+        {
+            "input": "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
+        }
+    )
+    
     #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
     #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
     #agent.run("use transcription from transcriptions.json and summarize it")
-    db = get_vector_store("you_tube")
-    query = "Are there any news related to Joe Biden?"
-    docs = db.similarity_search(query,2)
+    
+    # WORKS
+    #db = get_vector_store("you_tube")
+    #query = "Are there any news related to Joe Biden?"
+    #docs = db.similarity_search(query,2)
     #print(docs[0].page_content)
-    print(docs)
+    #print(docs)
+    
+    

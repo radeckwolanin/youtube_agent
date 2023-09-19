@@ -9,3 +9,4 @@ pytube
 python-dotenv
 youtube-transcript-api
 chromadb
+google-search-results
