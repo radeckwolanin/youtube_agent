@@ -6,13 +6,16 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.tools import DuckDuckGoSearchRun
 import streamlit as st
 
-st.set_page_config(page_title="LangChain: Chat with search", page_icon="🦜")
-st.title("🦜 LangChain: Chat with search")
+st.set_page_config(page_title="YouTube Agent: Personal YT Assistant", page_icon="📺")
+st.title("📺 YouTube Agent: Personal YT Assistant")
 
 msgs = StreamlitChatMessageHistory()
 
 memory = ConversationBufferMemory(
-    chat_memory=msgs, return_messages=True, memory_key="chat_history", output_key="output"
+    chat_memory=msgs, 
+    return_messages=True, 
+    memory_key="chat_history", 
+    output_key="output"
 )
 if len(msgs.messages) == 0 or st.sidebar.button("Reset chat history"):
     msgs.clear()
