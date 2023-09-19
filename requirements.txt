@@ -12,3 +12,4 @@ chromadb
 google-search-results
 wikipedia
 streamlit
+duckduckgo-search
