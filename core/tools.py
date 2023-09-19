@@ -1,5 +1,6 @@
 from langchain.tools import BaseTool
 from youtube_search import YoutubeSearch
+from langchain.document_loaders import YoutubeLoader
 import json
 
 '''
@@ -27,6 +28,50 @@ class CustomYTSearchTool(BaseTool):
         else:
             num_results=2
         return self._search(subject,num_results)
+    
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("YTSS  does not yet support async")
+    
+'''
+CustomYTTranscribeTool transcribes YouTube videos and
+saves the transcriptions in transcriptions.json in your current directory
+'''
+
+class CustomYTTranscribeTool(BaseTool):
+    name = "CustomYTTranscribe"
+    description = "transcribe youtube videos"
+
+    def _transcribe(self, url_csv:str) -> str:
+        values_list = url_csv.split(",")
+        url_set = set(values_list)
+        datatype = type(url_set)
+        print(f"[YTTRANSCIBE***], received type {datatype} = {url_set}")
+
+        transcriptions = {}
+
+        for vurl in url_set:
+            #vpath = yt_get(vurl)
+            stripped_url = vurl.strip(" '")
+            vpath = "https://youtube.com"+stripped_url
+                      
+            loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
+            result = loader.load()
+            
+            transcription = result[0].page_content
+            
+            transcriptions[vurl]=transcription
+
+            print(f"transcribed {vpath} into :\n {transcription}")
+
+        with open("transcriptions.json", "w") as json_file:
+            json.dump(transcriptions, json_file)
+            
+        return
+    
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return self._transcribe(query)
     
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
