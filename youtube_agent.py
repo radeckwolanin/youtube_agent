@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from langchain.agents import ConversationalChatAgent, AgentExecutor
 from langchain.callbacks import StreamlitCallbackHandler
 from langchain.chat_models import ChatOpenAI
@@ -5,9 +7,13 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.tools import DuckDuckGoSearchRun
 import streamlit as st
+from core.tools import CustomYTSearchTool
 
-st.set_page_config(page_title="YouTube Agent: Personal YT Assistant", page_icon="📺")
-st.title("📺 YouTube Agent: Personal YT Assistant")
+load_dotenv() # Load environment variables from .env file
+
+st.set_page_config(page_title="YouTube Agent", page_icon="📺")
+st.title("📺 YouTube Agent")
+st.markdown('Welcome to YouTube Personal Assistant. Provide any subject that you want to explore using YouTube.')
 
 msgs = StreamlitChatMessageHistory()
 
@@ -17,9 +23,10 @@ memory = ConversationBufferMemory(
     memory_key="chat_history", 
     output_key="output"
 )
+
 if len(msgs.messages) == 0 or st.sidebar.button("Reset chat history"):
     msgs.clear()
-    msgs.add_ai_message("How can I help you?")
+    msgs.add_ai_message("What do you want to me to search YouTube for?")
     st.session_state.steps = {}
 
 avatars = {"human": "user", "ai": "assistant"}
@@ -38,8 +45,12 @@ if prompt := st.chat_input(placeholder="Who won the Women's U.S. Open in 2018?")
     st.chat_message("user").write(prompt)
 
     llm = ChatOpenAI(model_name="gpt-3.5-turbo", streaming=True)
+    
     tools = [DuckDuckGoSearchRun(name="Search")]
+    tools.append(CustomYTSearchTool())
+    
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
+    
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
         tools=tools,

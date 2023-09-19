@@ -160,8 +160,10 @@ class SummarizationTool(BaseTool):
         raise NotImplementedError("SummarizationTool  does not yet support async")
 
 if __name__ == "__main__":
-    with st.sidebar:
-        openai_api_key = st.text_input("OpenAI API Key", type="password")
+    
+    st.title("YouTube Agent")
+    st.set_page_config(page_title="YouTube Agent: personal YT assistant", page_icon="🦜")
+    st.title("🦜 YouTube Agent: personal YT assistant")
 
     if "messages" not in st.session_state:
         st.session_state["messages"] = [ChatMessage(role="assistant", content="How can I help you?")]
@@ -173,13 +175,9 @@ if __name__ == "__main__":
         st.session_state.messages.append(ChatMessage(role="user", content=prompt))
         st.chat_message("user").write(prompt)
 
-        if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
-            st.stop()
-
         with st.chat_message("assistant"):
             stream_handler = StreamHandler(st.empty())
-            llm = ChatOpenAI(openai_api_key=openai_api_key, streaming=True, callbacks=[stream_handler])
+            llm = ChatOpenAI(streaming=True, callbacks=[stream_handler])
             response = llm(st.session_state.messages)
             st.session_state.messages.append(ChatMessage(role="assistant", content=response.content))
     
