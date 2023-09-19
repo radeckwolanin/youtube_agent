@@ -99,5 +99,5 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
         #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
         
         st.write(response["output"])
-        print(resposne)
+        print(response)
         st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]

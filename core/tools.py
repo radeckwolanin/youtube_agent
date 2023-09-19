@@ -17,7 +17,8 @@ class CustomYTSearchTool(BaseTool):
         results = YoutubeSearch(subject,num_results).to_json()
         data = json.loads(results)
         url_suffix_list = [video['url_suffix'] for video in data['videos']]
-        return url_suffix_list
+        #return url_suffix_list
+        return results
     
     def _run(self, query: str) -> str:
         """Use the tool."""
