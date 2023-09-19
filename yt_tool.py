@@ -1,10 +1,15 @@
 #Import things that are needed generically
 import os
 from dotenv import load_dotenv
+import json
 from langchain.vectorstores import Chroma
 import chromadb
 from langchain.llms import OpenAI
 from langchain import LLMMathChain, SerpAPIWrapper
+from langchain.callbacks.streaming_stdout_final_only import (
+    FinalStreamingStdOutCallbackHandler,
+)
+from langchain.callbacks.base import BaseCallbackHandler
 from langchain.agents import AgentType, Tool, initialize_agent, tool, load_tools
 from langchain.chat_models import ChatOpenAI
 from langchain.tools import BaseTool
@@ -12,11 +17,15 @@ from langchain.document_loaders import YoutubeLoader
 
 from typing import Type
 from youtube_search import YoutubeSearch
-import json
 from yt_utils import get_vector_store #yt_get, yt_transcribe
 
 load_dotenv() # Load environment variables from .env file
 #OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Get API key from environment variable - not needed since load_dotenv()
+
+class MyCallbackHandler(BaseCallbackHandler):
+    def on_llm_new_token(self, token, **kwargs) -> None:
+        # print every token on a new line
+        print(f"#{token}#")
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.
@@ -139,10 +148,15 @@ class SummarizationTool(BaseTool):
         raise NotImplementedError("SummarizationTool  does not yet support async")
 
 if __name__ == "__main__":
-    llm = OpenAI(temperature=0)
+    #llm = OpenAI(temperature=0)
+    # Streaming
+    llm = OpenAI(
+        #streaming=True, callbacks=[FinalStreamingStdOutCallbackHandler()], temperature=0
+        streaming=True, callbacks=[MyCallbackHandler()], temperature=0
+    )
     
     #search = SerpAPIWrapper()
-    tools = load_tools(["serpapi", "llm-math"], llm=llm)
+    tools = load_tools(["wikipedia", "serpapi", "llm-math"], llm=llm)
     
     #tools = []
     """
@@ -163,14 +177,17 @@ if __name__ == "__main__":
         llm,
         agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
         verbose=True,
-        return_intermediate_steps=True,
+        #return_intermediate_steps=True,
     )
-    
+    agent.run(
+        "It's 2023 now. How many years ago did Konrad Adenauer become Chancellor of Germany."
+    )
+    """
     response = agent(
         {
             "input": "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?"
         }
-    )
+    )"""
     
     #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
     #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
