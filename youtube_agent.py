@@ -100,13 +100,12 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
         #print(response)
         #print("\n\n")
         
-        for inter_step in response["intermediate_steps"]:
-            if inter_step[0].tool == "CustomYTSearch":
-                data = json.loads(inter_step[1])
-                df = pd.DataFrame(data['videos'])
-                st.table(df)
-            
-        print("\n\n")
+        # To print json returned from CustomYTSearch as table
+        #for inter_step in response["intermediate_steps"]:
+        #    if inter_step[0].tool == "CustomYTSearch":
+        #        data = json.loads(inter_step[1])
+        #        df = pd.DataFrame(data['videos'])
+        #        st.table(df)
                 
         st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]
         

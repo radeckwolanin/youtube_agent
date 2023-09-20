@@ -46,7 +46,7 @@ saves the transcriptions in transcriptions.json in your current directory
 
 class CustomYTTranscribeTool(BaseTool):
     name = "CustomYTTranscribe"
-    description = "transcribe youtube videos"
+    description = "transcribe youtube videos. input to this tool is a comma separated list of URLs"
 
     def _transcribe(self, url_csv:str) -> str:
         values_list = url_csv.split(",")
@@ -73,10 +73,10 @@ class CustomYTTranscribeTool(BaseTool):
                 transcriptions[vurl]=transcription
                 print(f"transcribed {vpath} into :\n {transcription}")
 
-        with open("transcriptions.json", "w") as json_file:
+        with open("yt_transcriptions.json", "w") as json_file:
             json.dump(transcriptions, json_file)
             
-        return "Inform user that transcriptions has been saved in transcriptions.json file."
+        return "Inform user that transcriptions has been saved in yt_transcriptions.json file."
     
     def _run(self, query: str) -> str:
         """Use the tool."""
@@ -99,7 +99,7 @@ SummarizationTool summarizes any text and saves it to the file.
 '''
 class SummarizationTool(BaseTool):
     name = "SummarizationTool"
-    description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized."
+    description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized. If the file name is not specified, use yt_transcriptions.json as default"
 
     def _summarize(self, input_file:str) -> str:
         
