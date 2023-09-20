@@ -1,9 +1,21 @@
 import os
 import json
 from langchain.tools import BaseTool
-from youtube_search import YoutubeSearch
 from langchain.document_loaders import YoutubeLoader
+from langchain.vectorstores import Chroma
+from langchain.embeddings import OpenAIEmbeddings
+from youtube_search import YoutubeSearch
+import chromadb
 
+def get_vector_store(collection_name):
+    client = chromadb.HttpClient(host="20.115.73.2", port=8000)
+        
+    index = Chroma(
+        client=client,
+        collection_name=collection_name,
+        embedding_function=OpenAIEmbeddings()
+    )
+    return index
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.
@@ -43,7 +55,6 @@ class CustomYTSearchTool(BaseTool):
 CustomYTTranscribeTool transcribes YouTube videos and
 saves the transcriptions in transcriptions.json in your current directory
 '''
-
 class CustomYTTranscribeTool(BaseTool):
     name = "CustomYTTranscribe"
     description = "transcribe youtube videos. input to this tool is a comma separated list of URLs"
@@ -106,15 +117,29 @@ class VectorDBCheckStatus(BaseTool):
         url_set = set(values_list)
         datatype = type(url_set)
         print(f"[VectorDBCheckStatus***], received type {datatype} = {url_set}")
-        """
-        transcriptions = {}
+        
+        vectorstore = get_vector_store("you_tube")
+        
+        #transcriptions = {}
 
         for vurl in url_set:
             #vpath = yt_get(vurl)
             stripped_url = vurl.strip(" '")
-            splitted_url = stripped_url.split(".com")[-1] # input can be with or without youtube.com
-            vpath = "https://youtube.com"+splitted_url
-                      
+            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com
+            print("SOURCE:",source,"\n\n")
+            #vpath = "https://youtube.com"+splitted_url
+            #print(vectorstore.get(where = {"author":"Fox News"}))
+            #print(vectorstore.get(where = {"source":"UfL7hqGBLAQ"}))
+            number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
+            print("Number of IDs: ",number_of_ids,"\n\n")
+            if number_of_ids == 0:
+                return "The video with the link provided is not present in the vector database."
+            else:
+                return "Vector store contains {number_of_ids} documents for given link"
+            
+            #check if this link https://www.youtube.com/watch?v=piYf4gDthjY is already in database
+            #check if this link https://www.youtube.com/watch?v=UfL7hqGBLAQ is already in database
+        """
             loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
             result = loader.load()
             
