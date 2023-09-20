@@ -95,6 +95,76 @@ TODO:
 
 """
 '''
+VectorDBCheckStatus checks if given youtube url is already in VectorDB collection
+'''
+class VectorDBCheckStatus(BaseTool):
+    name = "VectorDBCheckStatus"
+    description = "checks status if given video transcript already exists in vector database. input to this tool is a comma separated list of URLs to you tube video. if no impot is present, use yt_transcriptions.json"
+
+    def _checkStatus(self, url_csv:str) -> str:
+        values_list = url_csv.split(",")
+        url_set = set(values_list)
+        datatype = type(url_set)
+        print(f"[VectorDBCheckStatus***], received type {datatype} = {url_set}")
+        """
+        transcriptions = {}
+
+        for vurl in url_set:
+            #vpath = yt_get(vurl)
+            stripped_url = vurl.strip(" '")
+            splitted_url = stripped_url.split(".com")[-1] # input can be with or without youtube.com
+            vpath = "https://youtube.com"+splitted_url
+                      
+            loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
+            result = loader.load()
+            
+            if len(result) == 0:
+                print(result)
+                raise NotImplementedError("YTTRANSCRIBE does not return any transcription")
+            else:
+                transcription = result[0].page_content            
+                transcriptions[vurl]=transcription
+                print(f"transcribed {vpath} into :\n {transcription}")
+
+        with open("yt_transcriptions.json", "w") as json_file:
+            json.dump(transcriptions, json_file)
+            
+        return "Inform user that transcriptions has been saved in yt_transcriptions.json file."
+        """
+        return 
+    
+    def _summarize(self, input_file:str) -> str:        
+        if os.path.exists(input_file):
+            try:
+                with open(input_file, 'r') as file:
+                    data = json.load(file)
+                print("File loaded successfully as JSON:")
+                
+                if isinstance(data, dict):
+                    # If the data is a dictionary
+                    for key, value in data.items():
+                        print(f"Key: {key}, Value: {value}")
+                        # TODO - finish from here
+                        
+                        
+            except json.JSONDecodeError as e:
+                print(f"Error loading JSON: {e}")
+                raise NotImplementedError(f"Error loading JSON: {e}")
+        else:
+            print(f"The file '{input_file}' does not exist.")
+            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
+        
+        return
+    
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return self._checkStatus(query)
+    
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("SummarizationTool  does not yet support async")
+
+'''
 SummarizationTool summarizes any text and saves it to the file.
 '''
 class SummarizationTool(BaseTool):

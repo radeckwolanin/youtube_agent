@@ -14,7 +14,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.tools import DuckDuckGoSearchRun
 import streamlit as st
-from core.tools import CustomYTSearchTool, CustomYTTranscribeTool, SummarizationTool
+from core.tools import CustomYTSearchTool, CustomYTTranscribeTool, SummarizationTool, VectorDBCheckStatus
 
 load_dotenv() # Load environment variables from .env file
 
@@ -69,6 +69,7 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     tools.append(CustomYTSearchTool())
     tools.append(CustomYTTranscribeTool())
     tools.append(SummarizationTool())
+    tools.append(VectorDBCheckStatus())
     
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     #chat_agent = initialize_agent(
