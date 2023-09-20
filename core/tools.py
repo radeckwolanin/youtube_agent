@@ -1,7 +1,9 @@
+import os
+import json
 from langchain.tools import BaseTool
 from youtube_search import YoutubeSearch
 from langchain.document_loaders import YoutubeLoader
-import json
+
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.
@@ -71,7 +73,7 @@ class CustomYTTranscribeTool(BaseTool):
         with open("transcriptions.json", "w") as json_file:
             json.dump(transcriptions, json_file)
             
-        return transcriptions
+        return "Transcriptions saved in transcriptions.json file."
     
     def _run(self, query: str) -> str:
         """Use the tool."""
@@ -80,3 +82,49 @@ class CustomYTTranscribeTool(BaseTool):
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
         raise NotImplementedError("YTSS  does not yet support async")
+    
+'''
+SummarizationTool summarizes any text and saves it to the file.
+'''
+"""
+TODO:
+- Check if summary already exists in database
+- Use RecursiveCharacterTextSplitter to split each transcript
+- Run map_reduce chain to summarize each transcript
+
+"""
+class SummarizationTool(BaseTool):
+    name = "SummarizationTool"
+    description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized."
+
+    def _summarize(self, input_file:str) -> str:
+        
+        if os.path.exists(input_file):
+            try:
+                with open(input_file, 'r') as file:
+                    data = json.load(file)
+                print("File loaded successfully as JSON:")
+                
+                if isinstance(data, dict):
+                    # If the data is a dictionary
+                    for key, value in data.items():
+                        print(f"Key: {key}, Value: {value}")
+                        # TODO - finish from here
+                        
+                        
+            except json.JSONDecodeError as e:
+                print(f"Error loading JSON: {e}")
+                raise NotImplementedError(f"Error loading JSON: {e}")
+        else:
+            print(f"The file '{input_file}' does not exist.")
+            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
+        
+        return
+    
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return self._summarize(query)
+    
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("SummarizationTool  does not yet support async")
