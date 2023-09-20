@@ -54,21 +54,24 @@ class CustomYTTranscribeTool(BaseTool):
         for vurl in url_set:
             #vpath = yt_get(vurl)
             stripped_url = vurl.strip(" '")
-            vpath = "https://youtube.com"+stripped_url
+            splitted_url = stripped_url.split(".com")[-1] # input can be with or without youtube.com
+            vpath = "https://youtube.com"+splitted_url
                       
             loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
             result = loader.load()
             
-            transcription = result[0].page_content
-            
-            transcriptions[vurl]=transcription
-
-            print(f"transcribed {vpath} into :\n {transcription}")
+            if len(result) == 0:
+                print(result)
+                raise NotImplementedError("YTTRANSCRIBE does not return any transcription")
+            else:
+                transcription = result[0].page_content            
+                transcriptions[vurl]=transcription
+                print(f"transcribed {vpath} into :\n {transcription}")
 
         with open("transcriptions.json", "w") as json_file:
             json.dump(transcriptions, json_file)
             
-        return
+        return transcriptions
     
     def _run(self, query: str) -> str:
         """Use the tool."""

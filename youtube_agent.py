@@ -12,7 +12,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.tools import DuckDuckGoSearchRun
 import streamlit as st
-from core.tools import CustomYTSearchTool
+from core.tools import CustomYTSearchTool, CustomYTTranscribeTool
 
 load_dotenv() # Load environment variables from .env file
 
@@ -66,39 +66,39 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     #tools = [DuckDuckGoSearchRun(name="Search")]
     tools = []
     tools.append(CustomYTSearchTool())
+    tools.append(CustomYTTranscribeTool())
     
     #chat_agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False)
     #chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     chat_agent = initialize_agent(
         tools, 
         llm, 
-        agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, 
-        #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION,
         verbose=False,
         max_iterations=5,
         memory=memory,
     )
     
-    """
-    executor = AgentExecutor.from_agent_and_tools(
-        agent=chat_agent,
-        tools=tools,
-        memory=memory,
-        return_intermediate_steps=True,
-        handle_parsing_errors=True
-    )
-    """
+    
+    #executor = AgentExecutor.from_agent_and_tools(
+    #    agent=chat_agent,
+    #    tools=tools,
+    #    memory=memory,
+    #    return_intermediate_steps=True,
+    #    handle_parsing_errors=True
+    #)
+    
     
     with st.chat_message("assistant"):
         st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
         
-        system_message = """You will be given a YouTube search query. Your goal is to search YouTube for related videos and return up to 4 links. Out of that JSON returned, create a table using streamlit st.write() that will display table with all attributes. Lastly, end final answer with some funny quote."""
-
+        system_message = """You will be given a YouTube search query. Your goal is to search YouTube for related videos and return up to 4 links. list out the results for video URLs. for each url_suffix in the search JSON output transcribe the youtube videos. Lastly, end final answer with some funny quote."""
+        # Out of that JSON returned, create a table using streamlit st.write() that will display table with all attributes.
         system_prompt = chat_agent.agent.create_prompt(
             system_message=system_message,
             tools=tools
         )  
-        chat_agent.agent.llm_chain.prompt = system_prompt        
+        #chat_agent.agent.llm_chain.prompt = system_prompt        
         
         response = chat_agent.run(prompt, callbacks=[st_cb])
         print(response)
