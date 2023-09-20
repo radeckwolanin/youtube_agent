@@ -83,9 +83,7 @@ class CustomYTTranscribeTool(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("YTSS  does not yet support async")
     
-'''
-SummarizationTool summarizes any text and saves it to the file.
-'''
+
 """
 TODO:
 - Check if summary already exists in database
@@ -93,6 +91,9 @@ TODO:
 - Run map_reduce chain to summarize each transcript
 
 """
+'''
+SummarizationTool summarizes any text and saves it to the file.
+'''
 class SummarizationTool(BaseTool):
     name = "SummarizationTool"
     description = "summarizes any text document. The input to this tool should be name of the json file that contains text to be summarized."
