@@ -16,14 +16,26 @@ from core.tools import CustomYTSearchTool
 
 load_dotenv() # Load environment variables from .env file
 
-st.set_page_config(page_title="YouTube Agent", page_icon="📺")
+st.set_page_config(
+    page_title="YouTube Agent", 
+    page_icon="📺",
+    layout="centered", # wide
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': 'https://www.extremelycoolapp.com/help',
+        'Report a bug': "https://www.extremelycoolapp.com/bug",
+        'About': "# This is a header. This is an *extremely* cool app!"
+    }
+)
+
 st.title("📺 YouTube Agent")
 st.markdown('Welcome to YouTube Personal Assistant. Provide any subject that you want to explore using YouTube.')
 
 msgs = StreamlitChatMessageHistory()
 
 memory = ConversationBufferMemory(
-    chat_memory=msgs, 
+    chat_memory=msgs,
+    k=5,
     return_messages=True, 
     memory_key="chat_history", 
     output_key="output"
@@ -31,7 +43,7 @@ memory = ConversationBufferMemory(
 
 if len(msgs.messages) == 0: #or st.sidebar.button("Reset chat history"):
     msgs.clear()
-    msgs.add_ai_message("What YouTube videos do you want me to search for?")
+    #msgs.add_ai_message("What YouTube videos do you want me to search for?")
     st.session_state.steps = {}
 
 avatars = {"human": "user", "ai": "assistant"}
@@ -56,25 +68,18 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     tools.append(CustomYTSearchTool())
     
     #chat_agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False)
-    chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
+    #chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
+    chat_agent = initialize_agent(
+        tools, 
+        llm, 
+        agent=AgentType.CHAT_CONVERSATIONAL_REACT_DESCRIPTION, 
+        #agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=False,
+        max_iterations=5,
+        memory=memory,
+    )
     
-    # The system instructions. Notice the 'context' placeholder down below. This is where our relevant docs will go.
-    # The 'question' in the human message below won't be a question per se, but rather a topic we want to get relevant information on
-    system_template = """
-    You will be given a YouTube search query. 
-    Your goal is to search YouTube for related videos and return 3 links.
-    Lastly, end final answer with some funny quote.
-    ----------------
-    {prompt}"""
-
-    messages = [
-        SystemMessagePromptTemplate.from_template(system_template),
-        HumanMessagePromptTemplate.from_template(prompt),
-    ]
-
-    # This will pull the two messages together and get them ready to be sent to the LLM through the retriever
-    CHAT_PROMPT = ChatPromptTemplate.from_messages(messages)
-    
+    """
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
         tools=tools,
@@ -82,22 +87,35 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
         return_intermediate_steps=True,
         handle_parsing_errors=True
     )
+    """
     
     with st.chat_message("assistant"):
         st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
+        
+        system_message = """You will be given a YouTube search query. Your goal is to search YouTube for related videos and return up to 4 links. Out of that JSON returned, create a table using streamlit st.write() that will display table with all attributes. Lastly, end final answer with some funny quote."""
+
+        system_prompt = chat_agent.agent.create_prompt(
+            system_message=system_message,
+            tools=tools
+        )  
+        chat_agent.agent.llm_chain.prompt = system_prompt        
+        
+        response = chat_agent.run(prompt, callbacks=[st_cb])
+        print(response)
         
         #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for video URLs.")
         #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
         #agent.run("use transcription from transcriptions.json and summarize it")
         
-        new_prompt = f"search youtube for {prompt} videos, and return upto 3 results. list out the results for video URLs."
-        print(new_prompt)
+        #new_prompt = f"search youtube for {prompt} videos, and return upto 3 results. list out the results for video URLs using streamlit st.json"
+        #print(new_prompt)
         #response = executor(prompt, callbacks=[st_cb])
-        response = executor(new_prompt, callbacks=[st_cb])
+        #response = executor(new_prompt, callbacks=[st_cb])
         
         #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
         #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
         
-        st.write(response["output"])
-        print(response)
-        st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]
+        #st.write(response["output"]) # if executor 
+        st.write(response)
+        #print(response)
+        #st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]
