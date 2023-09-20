@@ -1,3 +1,4 @@
 __pycache__/
 .env
 yt_search.json
+yt_transcriptions.json
