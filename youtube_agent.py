@@ -1,4 +1,6 @@
 import os
+import json
+import pandas as pd
 from dotenv import load_dotenv
 from langchain.agents import ConversationalChatAgent, AgentType, AgentExecutor, initialize_agent
 from langchain.callbacks import StreamlitCallbackHandler
@@ -63,13 +65,11 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
 
     llm = ChatOpenAI(model_name="gpt-3.5-turbo", streaming=True)
     
-    #tools = [DuckDuckGoSearchRun(name="Search")]
     tools = []
     tools.append(CustomYTSearchTool())
     tools.append(CustomYTTranscribeTool())
     tools.append(SummarizationTool())
     
-    #chat_agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=False)
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     #chat_agent = initialize_agent(
     #    tools, 
@@ -93,30 +93,20 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     with st.chat_message("assistant"):
         st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
         
-        #system_message = """You will be given a YouTube search query. Your goal is to search YouTube for related videos and return up to 4 links. list out the results for video URLs. for each url_suffix in the search JSON output transcribe the youtube videos. Lastly, end final answer with some funny quote."""
-        # Out of that JSON returned, create a table using streamlit st.write() that will display table with all attributes.
-        #system_prompt = chat_agent.agent.create_prompt(
-        #    system_message=system_message,
-        #    tools=tools
-        #)  
-        #chat_agent.agent.llm_chain.prompt = system_prompt        
-        
-        #response = chat_agent.run(prompt, callbacks=[st_cb])
-        #print(response)
-        
-        #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for video URLs.")
-        #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
-        #agent.run("use transcription from transcriptions.json and summarize it")
-        
-        #new_prompt = f"search youtube for {prompt} videos, and return upto 3 results. list out the results for video URLs using streamlit st.json"
-        #print(new_prompt)
         response = executor(prompt, callbacks=[st_cb])
-        #response = executor(new_prompt, callbacks=[st_cb])
-        
-        #agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
-        #agent.run("search youtube for Elon Musk youtube videos, and return upto 3 results. list out the results for  video URLs. for each url_suffix in the search JSON output transcribe the youtube videos")
         
         st.write(response["output"]) # if executor 
         #st.write(response) # if initialize agent
-        print(response)
+        #print(response)
+        #print("\n\n")
+        
+        for inter_step in response["intermediate_steps"]:
+            if inter_step[0].tool == "CustomYTSearch":
+                data = json.loads(inter_step[1])
+                df = pd.DataFrame(data['videos'])
+                st.table(df)
+            
+        print("\n\n")
+                
         st.session_state.steps[str(len(msgs.messages) - 1)] = response["intermediate_steps"]
+        

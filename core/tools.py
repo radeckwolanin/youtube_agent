@@ -20,6 +20,9 @@ class CustomYTSearchTool(BaseTool):
         data = json.loads(results)
         url_suffix_list = [video['url_suffix'] for video in data['videos']]
         #return url_suffix_list
+        with open("yt_search.json", "w") as json_file:
+            json.dump(results, json_file)
+            
         return results
     
     def _run(self, query: str) -> str:
@@ -73,7 +76,7 @@ class CustomYTTranscribeTool(BaseTool):
         with open("transcriptions.json", "w") as json_file:
             json.dump(transcriptions, json_file)
             
-        return "Transcriptions saved in transcriptions.json file."
+        return "Inform user that transcriptions has been saved in transcriptions.json file."
     
     def _run(self, query: str) -> str:
         """Use the tool."""
