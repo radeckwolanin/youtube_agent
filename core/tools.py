@@ -3,6 +3,7 @@ import json
 #import pickle
 from langchain.tools import BaseTool
 from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -11,6 +12,8 @@ from langchain.embeddings import OpenAIEmbeddings
 from youtube_search import YoutubeSearch
 import chromadb
 from pydantic import BaseModel, Field
+
+from core.prompts import CHAT_PROMPT_MAP, CHAT_PROMPT_COMBINE
 
 def get_vector_store(collection_name):
     client = chromadb.HttpClient(host="20.115.73.2", port=8000)
@@ -214,6 +217,88 @@ class SummarizationTool(BaseTool):
     def _run(self, query: str) -> str:
         """Use the tool."""
         return self._summarize(query)
+    
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("SummarizationTool  does not yet support async")
+    
+'''
+ExtractInfoTool extracts information from transcript
+'''
+class ExtractInfoTool(BaseTool):
+    name = "ExtractInfoTool"
+    description = "extracts valuable information from any text document like topics and short description of each topic. The input to this tool should be name of the json file that contains text. If the file name is not specified, use yt_transcriptions.json as default. Output is a list of topic names and brief 1-sentence description of the topic"
+
+    def _extractInfo(self, input_file:str) -> str:
+        
+        if os.path.exists(input_file):
+            try:
+                with open(input_file, 'r', encoding='utf-8') as file:
+                    loaded_serializable_transcriptions = json.load(file)
+                
+                # Creating two versions of the model so I can swap between gpt3.5 and gpt4
+                llm3 = ChatOpenAI(temperature=0,
+                                model_name="gpt-3.5-turbo-0613",
+                                request_timeout = 180
+                                )
+
+                llm4 = ChatOpenAI(temperature=0,
+                                model_name="gpt-4-0613",
+                                request_timeout = 180
+                                )
+                
+                chain = load_summarize_chain(llm4, # llm3
+                             chain_type="map_reduce",
+                             map_prompt=CHAT_PROMPT_MAP,
+                             combine_prompt=CHAT_PROMPT_COMBINE,
+                             verbose=False
+                            )                
+                
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)         
+                
+                # Reconstruct Document objects from the loaded data
+                loaded_transcriptions = []
+                summaries = []
+
+                for doc_dict in loaded_serializable_transcriptions:
+                    # Reconstruct Document objects from dictionaries
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'], summary="")
+                    print("Loaded transcript: ",doc.metadata)
+                    loaded_transcriptions.append(doc)
+                
+                    # Split into chunks if too long
+                    splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
+                    
+                    topics_found = chain.run({"input_documents": splitted_transcriptions})
+                    
+                    print(topics_found)
+                                        
+                    #doc.summary = chain.run(splitted_transcriptions)                    
+                    #summaries.append(doc.to_dict())
+                    
+                    
+                
+                #with open('yt_summaries.json', 'w', encoding='utf-8') as file:
+                #    json.dump(summaries, file, ensure_ascii=False, indent=4)
+                    
+                # TODO: 
+                # - Return summaries of each video, not only first [0]
+                #print(summaries[0]['summary'])
+                #return f"SUMMARY: {summaries[0]['summary']}"
+                return topics_found
+                        
+            except json.JSONDecodeError as e:
+                print(f"Error loading JSON: {e}")
+                raise NotImplementedError(f"Error loading JSON: {e}")
+        else:
+            print(f"The file '{input_file}' does not exist.")
+            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
+        
+        return "Summary of the transcript: this video talks about iPhone 15"
+    
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return self._extractInfo(query)
     
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
