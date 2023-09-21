@@ -63,3 +63,19 @@ human_template="Transcript: {text}" # Simply just pass the text as a human messa
 human_message_prompt_map = HumanMessagePromptTemplate.from_template(human_template)
 
 CHAT_PROMPT_COMBINE = ChatPromptTemplate.from_messages(messages=[system_message_prompt_map, human_message_prompt_map])
+
+# Expand on each topic
+system_template = """
+You will be given transcript which contains many topics.
+You goal is to write a summary (5 sentences or less) about a topic the user chooses
+Do not respond with information that isn't relevant to the topic that the user gives you
+----------------
+{context}"""
+
+messages = [
+    SystemMessagePromptTemplate.from_template(system_template),
+    HumanMessagePromptTemplate.from_template("{question}"),
+]
+
+# This will pull the two messages together and get them ready to be sent to the LLM through the retriever
+CHAT_PROMPT_EXPAND = ChatPromptTemplate.from_messages(messages)
