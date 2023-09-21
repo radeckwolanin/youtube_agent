@@ -23,7 +23,7 @@ st.set_page_config(
     page_icon="📺",
     layout="centered", # wide
     initial_sidebar_state="expanded",
-    menu_items={
+    menu_items={ # TODO
         'Get Help': 'https://www.extremelycoolapp.com/help',
         'Report a bug': "https://www.extremelycoolapp.com/bug",
         'About': "# This is a header. This is an *extremely* cool app!"
@@ -31,7 +31,6 @@ st.set_page_config(
 )
 
 st.title("📺 YouTube Agent")
-#st.markdown("As your YouTube agent, I can perform many task related to YT videos. For example you can start by searching any subject like 'search todays top global news' or 'transcribe this video'.")
 
 msgs = StreamlitChatMessageHistory()
 
@@ -45,7 +44,6 @@ memory = ConversationBufferMemory(
 
 if len(msgs.messages) == 0: #or st.sidebar.button("Reset chat history"):
     msgs.clear()
-    #msgs.add_ai_message("What YouTube videos do you want me to search for?")
     msgs.add_ai_message("As your YouTube agent, I can perform many task related to YT videos. For example you can start by searching any subject like 'search todays top global news' or 'transcribe this video'.")
     st.session_state.steps = {}
 
@@ -81,7 +79,6 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     #    max_iterations=5,
     #    memory=memory,
     #)
-    
     
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
