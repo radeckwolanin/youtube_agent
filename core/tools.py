@@ -20,6 +20,13 @@ from core.prompts import (
     CHAT_PROMPT_EXPAND,
 )
 
+"""
+TODO:
+- Save transcript to database
+- Use RetrivalQA from vectorstore to expand on each topic
+- Based on extracted data, create new content/tweet
+"""
+
 def get_vector_store(collection_name):
     client = chromadb.HttpClient(host="20.115.73.2", port=8000)
         
@@ -127,11 +134,6 @@ class CustomYTTranscribeTool(BaseTool):
         raise NotImplementedError("YTSS  does not yet support async")
     
 
-"""
-TODO:
-- Use RecursiveCharacterTextSplitter to split each transcript
-- Run map_reduce chain to summarize each transcript
-"""
 '''
 VectorDBCheckStatus checks if given youtube url is already in VectorDB you_tube collection
 
@@ -301,9 +303,6 @@ class ExtractInfoTool(BaseTool):
                     
                     doc.metadata['topics'] = topics_structured
                     topics_return.append(doc.to_dict())
-                                        
-                    #doc.summary = chain.run(splitted_transcriptions)                    
-                    #summaries.append(doc.to_dict())
                     
                 with open('yt_transcriptions.json', 'w', encoding='utf-8') as file:
                     json.dump(topics_return, file, ensure_ascii=False, indent=4)
