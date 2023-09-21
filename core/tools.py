@@ -1,11 +1,13 @@
 import os
 import json
+#import pickle
 from langchain.tools import BaseTool
 from langchain.document_loaders import YoutubeLoader
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from youtube_search import YoutubeSearch
 import chromadb
+from pydantic import BaseModel, Field
 
 def get_vector_store(collection_name):
     client = chromadb.HttpClient(host="20.115.73.2", port=8000)
@@ -16,6 +18,18 @@ def get_vector_store(collection_name):
         embedding_function=OpenAIEmbeddings()
     )
     return index
+
+class Document(BaseModel):
+    """Interface for interacting with a document."""
+
+    page_content: str
+    metadata: dict = Field(default_factory=dict)
+
+    def to_dict(self):
+        return self.dict(by_alias=True, exclude_unset=True) # just an example!
+
+    def to_json(self):
+        return self.json(by_alias=True, exclude_unset=True) # just an example!
 
 '''
 CustomYTSearchTool searches YouTube videos and returns a specified number of video URLs.
@@ -64,15 +78,16 @@ class CustomYTTranscribeTool(BaseTool):
         url_set = set(values_list)
         datatype = type(url_set)
         print(f"[YTTRANSCIBE***], received type {datatype} = {url_set}")
-
-        transcriptions = {}
+        
+        serializable_transcriptions = []
 
         for vurl in url_set:
-            #vpath = yt_get(vurl)
             stripped_url = vurl.strip(" '")
-            splitted_url = stripped_url.split(".com")[-1] # input can be with or without youtube.com
-            vpath = "https://youtube.com"+splitted_url
-                      
+            #splitted_url = stripped_url.split(".com")[-1] # input can be with or without youtube.com
+            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com
+            vpath = "https://youtube.com/watch?v="+source
+            #vpath = "https://youtube.com"+splitted_url
+                                  
             loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
             result = loader.load()
             
@@ -80,12 +95,15 @@ class CustomYTTranscribeTool(BaseTool):
                 print(result)
                 raise NotImplementedError("YTTRANSCRIBE does not return any transcription")
             else:
-                transcription = result[0].page_content            
-                transcriptions[vurl]=transcription
-                print(f"transcribed {vpath} into :\n {transcription}")
-
-        with open("yt_transcriptions.json", "w") as json_file:
-            json.dump(transcriptions, json_file)
+                doc_dict = {
+                    'page_content': result[0].page_content,
+                    'metadata': result[0].metadata
+                }
+                serializable_transcriptions.append(doc_dict)
+                print(f"Transcribed {vpath} Transcription: {result[0].page_content[:50]}...")
+        
+        with open('yt_transcriptions.json', 'w', encoding='utf-8') as file:
+            json.dump(serializable_transcriptions, file, ensure_ascii=False, indent=4)
             
         return "Inform user that transcriptions has been saved in yt_transcriptions.json file."
     
@@ -137,7 +155,7 @@ class VectorDBCheckStatus(BaseTool):
     
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("SummarizationTool  does not yet support async")
+        raise NotImplementedError("VectorDBCheckStatus does not yet support async")
 
 '''
 SummarizationTool summarizes any text and saves it to the file.
@@ -150,16 +168,17 @@ class SummarizationTool(BaseTool):
         
         if os.path.exists(input_file):
             try:
-                with open(input_file, 'r') as file:
-                    data = json.load(file)
-                print("File loaded successfully as JSON:")
+                with open(input_file, 'r', encoding='utf-8') as file:
+                    loaded_serializable_transcriptions = json.load(file)                
                 
-                if isinstance(data, dict):
-                    # If the data is a dictionary
-                    for key, value in data.items():
-                        print(f"Key: {key}, Value: {value}")
-                        # TODO - finish from here
-                        
+                # Reconstruct Document objects from the loaded data
+                loaded_transcriptions = []
+
+                for doc_dict in loaded_serializable_transcriptions:
+                    # Reconstruct Document objects from dictionaries
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
+                    loaded_transcriptions.append(doc)
+                    print("Loaded transcript: ",doc.metadata)
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
@@ -168,7 +187,7 @@ class SummarizationTool(BaseTool):
             print(f"The file '{input_file}' does not exist.")
             raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
         
-        return
+        return "Summary of the transcript: this video talks about iPhone 15"
     
     def _run(self, query: str) -> str:
         """Use the tool."""
