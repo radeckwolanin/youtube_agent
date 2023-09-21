@@ -27,6 +27,7 @@ class Document(BaseModel):
 
     page_content: str
     metadata: dict = Field(default_factory=dict)
+    summary: str
 
     def to_dict(self):
         return self.dict(by_alias=True, exclude_unset=True) # just an example!
@@ -181,9 +182,8 @@ class SummarizationTool(BaseTool):
                 summaries = []
 
                 for doc_dict in loaded_serializable_transcriptions:
-                    print(doc_dict,"\n\n")
                     # Reconstruct Document objects from dictionaries
-                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'], summary="")
                     print("Loaded transcript: ",doc.metadata)
                     loaded_transcriptions.append(doc)
                 
@@ -191,16 +191,17 @@ class SummarizationTool(BaseTool):
                     splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
                     
                     chain = load_summarize_chain(OpenAI(temperature=0), chain_type="map_reduce", verbose=False)
-                    summary = chain.run(splitted_transcriptions)
-                    #summariers.extend(chain.run(splitted_transcriptions))
-                    summaries.append({
-                        "metadata": doc.metadata,
-                        "summary": summary,
-                    })
-                    
+                    doc.summary = chain.run(splitted_transcriptions)                    
+                    summaries.append(doc.to_dict())
                 
-                print(summaries)
-                return summaries
+                # TODO: 
+                # - Save to file
+                # - Return summaries of each video, not only first [0]
+                with open('yt_summaries.json', 'w', encoding='utf-8') as file:
+                    json.dump(summaries, file, ensure_ascii=False, indent=4)
+                
+                print(summaries[0]['summary'])
+                return f"SUMMARY: {summaries[0]['summary']}"
                 #return chain.run(splitted_transcriptions)
                         
             except json.JSONDecodeError as e:
