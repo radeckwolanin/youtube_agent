@@ -3,6 +3,7 @@ import json
 #import pickle
 from langchain.tools import BaseTool
 from langchain.document_loaders import YoutubeLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from youtube_search import YoutubeSearch
@@ -169,7 +170,9 @@ class SummarizationTool(BaseTool):
         if os.path.exists(input_file):
             try:
                 with open(input_file, 'r', encoding='utf-8') as file:
-                    loaded_serializable_transcriptions = json.load(file)                
+                    loaded_serializable_transcriptions = json.load(file)
+                
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)         
                 
                 # Reconstruct Document objects from the loaded data
                 loaded_transcriptions = []
@@ -177,8 +180,10 @@ class SummarizationTool(BaseTool):
                 for doc_dict in loaded_serializable_transcriptions:
                     # Reconstruct Document objects from dictionaries
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
-                    loaded_transcriptions.append(doc)
+                    #loaded_transcriptions.append(doc)
                     print("Loaded transcript: ",doc.metadata)
+                    # Split into chunks if too long
+                    loaded_transcriptions.extend(text_splitter.split_documents(doc))
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
