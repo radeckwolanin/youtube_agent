@@ -231,7 +231,7 @@ ExtractInfoTool extracts information from transcript
 '''
 class ExtractInfoTool(BaseTool):
     name = "ExtractInfoTool"
-    description = "extracts valuable information from any text document like topics and short description of each topic. The input to this tool should be name of the json file that contains text. If the file name is not specified, use yt_transcriptions.json as default. Output is a list of topic names and brief 1-sentence description of the topic"
+    description = "extracts valuable information from any text document like topics and short description of each topic. The input to this tool should be name of the json file that contains text. If the file name is not specified, use yt_transcriptions.json as default where latest transcript is saved."
 
     def _extractInfo(self, input_file:str) -> str:
         
@@ -262,21 +262,18 @@ class ExtractInfoTool(BaseTool):
                 
                 # Reconstruct Document objects from the loaded data
                 loaded_transcriptions = []
-                summaries = []
+                topics_return = []
 
                 for doc_dict in loaded_serializable_transcriptions:
                     # Reconstruct Document objects from dictionaries
-                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'], summary="")
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
                     print("Loaded transcript: ",doc.metadata)
                     loaded_transcriptions.append(doc)
                 
                     # Split into chunks if too long
                     splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
-                    
                     topics_found = chain.run({"input_documents": splitted_transcriptions})
-                    
-                    print(topics_found)
-                    
+                                        
                     # Create schema for topic extraction
                     schema = {
                         "properties": {
@@ -302,18 +299,19 @@ class ExtractInfoTool(BaseTool):
                     chain = create_extraction_chain(schema, llm3)
                     topics_structured = chain.run(topics_found)
                     
-                    #CHAT_PROMPT_EXPAND
+                    doc.metadata['topics'] = topics_structured
+                    topics_return.append(doc.to_dict())
                                         
                     #doc.summary = chain.run(splitted_transcriptions)                    
                     #summaries.append(doc.to_dict())
                     
-                
-                #with open('yt_summaries.json', 'w', encoding='utf-8') as file:
-                #    json.dump(summaries, file, ensure_ascii=False, indent=4)
+                with open('yt_transcriptions.json', 'w', encoding='utf-8') as file:
+                    json.dump(topics_return, file, ensure_ascii=False, indent=4)
                     
                 # TODO: 
                 # - Return extraction of each video, not only first [0]
-                return topics_structured
+                print(topics_return[0]['metadata']['topics'])
+                return f"TOPICS DISCUSSED: {topics_return[0]['metadata']['topics']}"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
@@ -328,4 +326,4 @@ class ExtractInfoTool(BaseTool):
     
     async def _arun(self, query: str) -> str:
         """Use the tool asynchronously."""
-        raise NotImplementedError("SummarizationTool  does not yet support async")
+        raise NotImplementedError("ExtractInfoTool  does not yet support async")
