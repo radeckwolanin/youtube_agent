@@ -35,7 +35,6 @@ class Document(BaseModel):
 
     page_content: str
     metadata: dict = Field(default_factory=dict)
-    summary: str
 
     def to_dict(self):
         return self.dict(by_alias=True, exclude_unset=True) # just an example!
@@ -191,7 +190,7 @@ class SummarizationTool(BaseTool):
 
                 for doc_dict in loaded_serializable_transcriptions:
                     # Reconstruct Document objects from dictionaries
-                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'], summary="")
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
                     print("Loaded transcript: ",doc.metadata)
                     loaded_transcriptions.append(doc)
                 
@@ -199,16 +198,16 @@ class SummarizationTool(BaseTool):
                     splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
                     
                     chain = load_summarize_chain(OpenAI(temperature=0), chain_type="map_reduce", verbose=False)
-                    doc.summary = chain.run(splitted_transcriptions)                    
+                    doc.metadata['summary'] = chain.run(splitted_transcriptions)                    
                     summaries.append(doc.to_dict())
                 
-                with open('yt_summaries.json', 'w', encoding='utf-8') as file:
+                with open('yt_transcriptions.json', 'w', encoding='utf-8') as file:
                     json.dump(summaries, file, ensure_ascii=False, indent=4)
                     
                 # TODO: 
                 # - Return summaries of each video, not only first [0]
-                print(summaries[0]['summary'])
-                return f"SUMMARY: {summaries[0]['summary']}"
+                print(summaries[0]['metadata']['summary'])
+                return f"SUMMARY: {summaries[0]['metadata']['summary']}"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
