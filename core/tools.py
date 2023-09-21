@@ -194,15 +194,13 @@ class SummarizationTool(BaseTool):
                     doc.summary = chain.run(splitted_transcriptions)                    
                     summaries.append(doc.to_dict())
                 
-                # TODO: 
-                # - Save to file
-                # - Return summaries of each video, not only first [0]
                 with open('yt_summaries.json', 'w', encoding='utf-8') as file:
                     json.dump(summaries, file, ensure_ascii=False, indent=4)
-                
+                    
+                # TODO: 
+                # - Return summaries of each video, not only first [0]
                 print(summaries[0]['summary'])
                 return f"SUMMARY: {summaries[0]['summary']}"
-                #return chain.run(splitted_transcriptions)
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
