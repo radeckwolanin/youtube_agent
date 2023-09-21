@@ -5,6 +5,7 @@ from langchain.tools import BaseTool
 from langchain.llms import OpenAI
 from langchain.chat_models import ChatOpenAI
 from langchain.chains.summarize import load_summarize_chain
+from langchain.chains import create_extraction_chain
 from langchain.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
@@ -247,7 +248,7 @@ class ExtractInfoTool(BaseTool):
                                 request_timeout = 180
                                 )
                 
-                chain = load_summarize_chain(llm4, # llm3
+                chain = load_summarize_chain(llm3, # llm4
                              chain_type="map_reduce",
                              map_prompt=CHAT_PROMPT_MAP,
                              combine_prompt=CHAT_PROMPT_COMBINE,
@@ -272,20 +273,42 @@ class ExtractInfoTool(BaseTool):
                     topics_found = chain.run({"input_documents": splitted_transcriptions})
                     
                     print(topics_found)
+                    
+                    # Create schema for topic extraction
+                    schema = {
+                        "properties": {
+                            # The title of the topic
+                            "topic_name": {
+                                "type": "string",
+                                "description" : "The title of the topic listed"
+                            },
+                            # The description
+                            "description": {
+                                "type": "string",
+                                "description" : "The description of the topic listed"
+                            },
+                            "tag": {
+                                "type": "string",
+                                "description" : "The type of content being described",
+                                "enum" : ['Business Models', 'Life Advice', 'Health & Wellness', 'Stories', 'Politics']
+                            }
+                        },
+                        "required": ["topic", "description"],
+                    }
+                    
+                    chain = create_extraction_chain(schema, llm3)
+                    topics_structured = chain.run(topics_found)
                                         
                     #doc.summary = chain.run(splitted_transcriptions)                    
                     #summaries.append(doc.to_dict())
-                    
                     
                 
                 #with open('yt_summaries.json', 'w', encoding='utf-8') as file:
                 #    json.dump(summaries, file, ensure_ascii=False, indent=4)
                     
                 # TODO: 
-                # - Return summaries of each video, not only first [0]
-                #print(summaries[0]['summary'])
-                #return f"SUMMARY: {summaries[0]['summary']}"
-                return topics_found
+                # - Return extraction of each video, not only first [0]
+                return topics_structured
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
