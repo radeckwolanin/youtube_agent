@@ -2,6 +2,8 @@ import os
 import json
 #import pickle
 from langchain.tools import BaseTool
+from langchain.llms import OpenAI
+from langchain.chains.summarize import load_summarize_chain
 from langchain.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import Chroma
@@ -176,14 +178,30 @@ class SummarizationTool(BaseTool):
                 
                 # Reconstruct Document objects from the loaded data
                 loaded_transcriptions = []
+                summaries = []
 
                 for doc_dict in loaded_serializable_transcriptions:
+                    print(doc_dict,"\n\n")
                     # Reconstruct Document objects from dictionaries
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
-                    #loaded_transcriptions.append(doc)
                     print("Loaded transcript: ",doc.metadata)
+                    loaded_transcriptions.append(doc)
+                
                     # Split into chunks if too long
-                    loaded_transcriptions.extend(text_splitter.split_documents(doc))
+                    splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
+                    
+                    chain = load_summarize_chain(OpenAI(temperature=0), chain_type="map_reduce", verbose=False)
+                    summary = chain.run(splitted_transcriptions)
+                    #summariers.extend(chain.run(splitted_transcriptions))
+                    summaries.append({
+                        "metadata": doc.metadata,
+                        "summary": summary,
+                    })
+                    
+                
+                print(summaries)
+                return summaries
+                #return chain.run(splitted_transcriptions)
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
