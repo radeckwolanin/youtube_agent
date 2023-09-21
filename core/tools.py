@@ -14,7 +14,11 @@ from youtube_search import YoutubeSearch
 import chromadb
 from pydantic import BaseModel, Field
 
-from core.prompts import CHAT_PROMPT_MAP, CHAT_PROMPT_COMBINE
+from core.prompts import (
+    CHAT_PROMPT_MAP, 
+    CHAT_PROMPT_COMBINE,
+    CHAT_PROMPT_EXPAND,
+)
 
 def get_vector_store(collection_name):
     client = chromadb.HttpClient(host="20.115.73.2", port=8000)
@@ -247,7 +251,7 @@ class ExtractInfoTool(BaseTool):
                                 model_name="gpt-4-0613",
                                 request_timeout = 180
                                 )
-                
+                # use llm4 for extraction, llm3 just for testing
                 chain = load_summarize_chain(llm3, # llm4
                              chain_type="map_reduce",
                              map_prompt=CHAT_PROMPT_MAP,
@@ -298,6 +302,8 @@ class ExtractInfoTool(BaseTool):
                     
                     chain = create_extraction_chain(schema, llm3)
                     topics_structured = chain.run(topics_found)
+                    
+                    #CHAT_PROMPT_EXPAND
                                         
                     #doc.summary = chain.run(splitted_transcriptions)                    
                     #summaries.append(doc.to_dict())
@@ -315,9 +321,7 @@ class ExtractInfoTool(BaseTool):
                 raise NotImplementedError(f"Error loading JSON: {e}")
         else:
             print(f"The file '{input_file}' does not exist.")
-            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
-        
-        return "Summary of the transcript: this video talks about iPhone 15"
+            raise NotImplementedError(f"ExtractInfoTool: File '{input_file}' does not exist.")
     
     def _run(self, query: str) -> str:
         """Use the tool."""
