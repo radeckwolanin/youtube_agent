@@ -106,7 +106,8 @@ TODO:
 
 """
 '''
-VectorDBCheckStatus checks if given youtube url is already in VectorDB collection
+VectorDBCheckStatus checks if given youtube url is already in VectorDB you_tube collection
+
 '''
 class VectorDBCheckStatus(BaseTool):
     name = "VectorDBCheckStatus"
@@ -118,68 +119,19 @@ class VectorDBCheckStatus(BaseTool):
         datatype = type(url_set)
         print(f"[VectorDBCheckStatus***], received type {datatype} = {url_set}")
         
+        db_status = {}
         vectorstore = get_vector_store("you_tube")
         
-        #transcriptions = {}
-
         for vurl in url_set:
-            #vpath = yt_get(vurl)
             stripped_url = vurl.strip(" '")
-            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com
-            print("SOURCE:",source,"\n\n")
-            #vpath = "https://youtube.com"+splitted_url
-            #print(vectorstore.get(where = {"author":"Fox News"}))
-            #print(vectorstore.get(where = {"source":"UfL7hqGBLAQ"}))
+            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com     
             number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
-            print("Number of IDs: ",number_of_ids,"\n\n")
-            if number_of_ids == 0:
-                return "The video with the link provided is not present in the vector database."
-            else:
-                return "Vector store contains {number_of_ids} documents for given link"
             
+            db_status[vurl]={"SOURCE": source, "NUMBER OF RECORDS": number_of_ids}
+            #print(db_status)            
             #check if this link https://www.youtube.com/watch?v=piYf4gDthjY is already in database
             #check if this link https://www.youtube.com/watch?v=UfL7hqGBLAQ is already in database
-        """
-            loader = YoutubeLoader.from_youtube_url(vpath, add_video_info=True)
-            result = loader.load()
-            
-            if len(result) == 0:
-                print(result)
-                raise NotImplementedError("YTTRANSCRIBE does not return any transcription")
-            else:
-                transcription = result[0].page_content            
-                transcriptions[vurl]=transcription
-                print(f"transcribed {vpath} into :\n {transcription}")
-
-        with open("yt_transcriptions.json", "w") as json_file:
-            json.dump(transcriptions, json_file)
-            
-        return "Inform user that transcriptions has been saved in yt_transcriptions.json file."
-        """
-        return 
-    
-    def _summarize(self, input_file:str) -> str:        
-        if os.path.exists(input_file):
-            try:
-                with open(input_file, 'r') as file:
-                    data = json.load(file)
-                print("File loaded successfully as JSON:")
-                
-                if isinstance(data, dict):
-                    # If the data is a dictionary
-                    for key, value in data.items():
-                        print(f"Key: {key}, Value: {value}")
-                        # TODO - finish from here
-                        
-                        
-            except json.JSONDecodeError as e:
-                print(f"Error loading JSON: {e}")
-                raise NotImplementedError(f"Error loading JSON: {e}")
-        else:
-            print(f"The file '{input_file}' does not exist.")
-            raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
-        
-        return
+        return db_status
     
     def _run(self, query: str) -> str:
         """Use the tool."""
