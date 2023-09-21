@@ -43,3 +43,23 @@ system_message_prompt_map = SystemMessagePromptTemplate.from_template(template)
 human_template="Transcript: {text}" # Simply just pass the text as a human message
 human_message_prompt_map = HumanMessagePromptTemplate.from_template(human_template)
 CHAT_PROMPT_MAP = ChatPromptTemplate.from_messages(messages=[system_message_prompt_map, human_message_prompt_map])
+
+# Combine prompt which will run once over the results of the map prompt above
+template="""
+You are a helpful assistant that helps retrieve topics talked about in transcript
+- You will be given a series of bullet topics of topics found
+- Your goal is to exract the topic names and brief 1-sentence description of the topic
+- Deduplicate any bullet points you see
+- Only pull topics from the transcript. Do not use the examples
+
+% START OF EXAMPLES
+ - Sam's Elisabeth Murdoch Story: Sam got a call from Elizabeth Murdoch when he had just launched The Hustle. She wanted to generate video content.
+ - Shaan's Rupert Murdoch Story: When Shaan was running Blab he was invited to an event organized by Rupert Murdoch during CES in Las Vegas.
+% END OF EXAMPLES
+"""
+system_message_prompt_map = SystemMessagePromptTemplate.from_template(template)
+
+human_template="Transcript: {text}" # Simply just pass the text as a human message
+human_message_prompt_map = HumanMessagePromptTemplate.from_template(human_template)
+
+CHAT_PROMPT_COMBINE = ChatPromptTemplate.from_messages(messages=[system_message_prompt_map, human_message_prompt_map])
