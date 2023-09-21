@@ -100,10 +100,8 @@ class CustomYTTranscribeTool(BaseTool):
 
 """
 TODO:
-- Check if summary already exists in database
 - Use RecursiveCharacterTextSplitter to split each transcript
 - Run map_reduce chain to summarize each transcript
-
 """
 '''
 VectorDBCheckStatus checks if given youtube url is already in VectorDB you_tube collection
