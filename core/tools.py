@@ -187,8 +187,9 @@ class VectorDBCollectionAdd(BaseTool):
     name = "VectorDBCollectionAdd"
     description = "stores, saves, adds text file to vector database. input to this tool is a name of the file that contains text. if no impot can be retrived from user input, use yt_transcriptions.json which contains latest transcript."
 
-    def _summarize(self, input_file:str) -> str:
-        
+    def _collectionAdd(self, input_file:str) -> str:
+        print(f"[VectorDBCollectionAdd***], File {input_file}")  
+              
         if os.path.exists(input_file):
             try:
                 with open(input_file, 'r', encoding='utf-8') as file:
@@ -202,15 +203,33 @@ class VectorDBCollectionAdd(BaseTool):
                 
                 # Reconstruct Document objects from the loaded data
                 loaded_files = []
-                #summaries = []
+                topics=[]
+                summaries = []
                 temp_title=""
 
                 for doc_dict in loaded_serializable_file:
                     # Reconstruct Document objects from dictionaries
-                    x = datetime.datetime.now()
-                    # TODO Add metadata of insertion time
+                    source = doc_dict['metadata']['source']
+                    print(f"Source: {source}")
+                    
+                    # Save topics if exists to you_tube_topics collection
+                    if doc_dict['metadata']['topics']:
+                        topics[source] = doc_dict['metadata']['topics']
+                        # Reset topics to just a number of topics since mtedata cannot contain list, thus save into separate collection
+                        doc_dict['metadata']['topics'] = len(doc_dict['metadata']['topics'])
+                    
+                    # Save summary if exists to you_tube_summaries collection
+                    if doc_dict['metadata']['summary']:
+                        summaries[source] = doc_dict['metadata']['summary']
+                        # Reset summary to True/False indicating if summary is created 
+                        doc_dict['metadata']['summary'] = True
+                        
+                    # Add when file was added to collection    
+                    doc_dict['metadata']['added_date_time'] = datetime.datetime.now()
+                    
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
-                    print("Loaded transcript: ",doc.metadata['title'])
+                    #print("Loaded transcript: ",doc.metadata['title'])
+                    print("Loaded transcript: ",doc.metadata)
                     temp_title=doc.metadata['title']
                     loaded_files.append(doc)
                 
@@ -249,8 +268,9 @@ class VectorDBCollectionAdd(BaseTool):
                     
                 """
                 
-                print(summaries[0]['metadata']['summary'])
-                return f"SUMMARY: {summaries[0]['metadata']['summary']}"
+                #print(summaries[0]['metadata']['summary'])
+                #return f"SUMMARY: {summaries[0]['metadata']['summary']}"
+                return "Transcript saved to database"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
@@ -258,26 +278,6 @@ class VectorDBCollectionAdd(BaseTool):
         else:
             print(f"The file '{input_file}' does not exist.")
             raise NotImplementedError(f"VectorDBCollectionAdd: File '{input_file}' does not exist.")
-    
-    def _collectionAdd(self, url_csv:str) -> str:    
-        values_list = url_csv.split(",")
-        url_set = set(values_list)
-        datatype = type(url_set)
-        print(f"[VectorDBCollectionAdd***], received type {datatype} = {url_set}")
-        
-        db_status = {}
-        vectorstore = get_vector_store("you_tube")
-        
-        for vurl in url_set:
-            stripped_url = vurl.strip(" '")
-            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com     
-            number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
-            
-            db_status[vurl]={"SOURCE": source, "NUMBER OF RECORDS": number_of_ids}
-            #print(db_status)            
-            #check if this link https://www.youtube.com/watch?v=piYf4gDthjY is already in database
-            #check if this link https://www.youtube.com/watch?v=UfL7hqGBLAQ is already in database
-        return db_status
     
     def _run(self, query: str) -> str:
         """Use the tool."""

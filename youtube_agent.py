@@ -20,6 +20,7 @@ from core.tools import (
     SummarizationTool, 
     VectorDBCheckStatus,
     ExtractInfoTool,
+    VectorDBCollectionAdd,
 )
 
 load_dotenv() # Load environment variables from .env file
@@ -76,6 +77,8 @@ if prompt := st.chat_input(placeholder="Todays top global news"):
     tools.append(SummarizationTool())
     tools.append(VectorDBCheckStatus())
     tools.append(ExtractInfoTool())
+    tools.append(VectorDBCollectionAdd())
+    
     
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     #chat_agent = initialize_agent(
