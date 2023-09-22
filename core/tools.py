@@ -28,13 +28,18 @@ TODO:
 """
 
 def get_vector_store(collection_name):
-    client = chromadb.HttpClient(host="20.115.73.2", port=8000)
+    
+    client = chromadb.HttpClient(
+        host=os.environ.get("DB_HOST"), 
+        port=os.environ.get("DB_PORT")
+    )
         
     index = Chroma(
         client=client,
         collection_name=collection_name,
         embedding_function=OpenAIEmbeddings()
     )
+    
     return index
 
 class Document(BaseModel):
