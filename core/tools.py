@@ -197,7 +197,6 @@ class VectorDBCollectionAdd(BaseTool):
                 
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
                 
-                print("load vectorstore index")
                 vectorstore = get_vector_store("you_tube")
                 
                 loaded_files = []   # page_content of files to be uploaded to vectorstore
@@ -236,14 +235,11 @@ class VectorDBCollectionAdd(BaseTool):
                     
                     temp_title=doc.metadata['title']
                     
-                
-                # Split into chunks if too long
-                splitted_texts =  text_splitter.split_documents(loaded_files)
-                
-                print("Load splitted documents")
-                # WORKS:
-                #id_list = vectorstore.add_documents(splitted_texts)
-                #print(f"ID List: {id_list}")
+                if len(loaded_files) > 0:
+                    # Split into chunks if too long text
+                    splitted_texts =  text_splitter.split_documents(loaded_files)
+                    id_list = vectorstore.add_documents(splitted_texts)
+                    print(f"ID List: {id_list}")
                 
                 number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
                 print(f"Number of ids stored {number_of_ids}")
