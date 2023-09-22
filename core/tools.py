@@ -1,5 +1,6 @@
 import os
 import json
+import datetime
 #import pickle
 from langchain.tools import BaseTool
 from langchain.llms import OpenAI
@@ -12,6 +13,7 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from youtube_search import YoutubeSearch
 import chromadb
+from chromadb.utils import embedding_functions
 from pydantic import BaseModel, Field
 
 from core.prompts import (
@@ -175,6 +177,116 @@ class VectorDBCheckStatus(BaseTool):
         """Use the tool asynchronously."""
         raise NotImplementedError("VectorDBCheckStatus does not yet support async")
 
+
+'''
+VectorDBCollectionAdd: Store YouTube transcripts in Chroma to later use for retrival
+TODO: Use Default Sentance Transformer instead of OpenAI ?
+
+'''
+class VectorDBCollectionAdd(BaseTool):
+    name = "VectorDBCollectionAdd"
+    description = "stores, saves, adds text file to vector database. input to this tool is a name of the file that contains text. if no impot can be retrived from user input, use yt_transcriptions.json which contains latest transcript."
+
+    def _summarize(self, input_file:str) -> str:
+        
+        if os.path.exists(input_file):
+            try:
+                with open(input_file, 'r', encoding='utf-8') as file:
+                    loaded_serializable_file = json.load(file)
+                
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
+                
+                #openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+                #    model_name="text-embedding-ada-002"
+                #)       
+                
+                # Reconstruct Document objects from the loaded data
+                loaded_files = []
+                #summaries = []
+                temp_title=""
+
+                for doc_dict in loaded_serializable_file:
+                    # Reconstruct Document objects from dictionaries
+                    x = datetime.datetime.now()
+                    # TODO Add metadata of insertion time
+                    doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
+                    print("Loaded transcript: ",doc.metadata['title'])
+                    temp_title=doc.metadata['title']
+                    loaded_files.append(doc)
+                
+                # Split into chunks if too long
+                splitted_texts =  text_splitter.split_documents(loaded_files)
+                print("load vectorstore index")
+                vectorstore = get_vector_store("you_tube")
+                print("Load splitted documents")
+                db = vectorstore.from_documents(splitted_texts, OpenAIEmbeddings())
+                
+                number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
+                print(f"Number of ids stored {number_of_ids}")
+                """
+                collection = client.get_or_create_collection(
+                            name="you_tube", 
+                            embedding_function=openai_ef
+                        )
+                
+                texts = []
+
+                text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
+
+                for url in youtube_url_list:
+                    loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
+                    result = loader.load()
+                    print(result[0].metadata)
+                    
+                    texts.extend(text_splitter.split_documents(result))
+                    
+                for text in texts:
+                    collection.add(
+                        ids=[str(uuid.uuid1())], 
+                        metadatas=text.metadata, 
+                        documents=text.page_content
+                    )
+                    
+                """
+                
+                print(summaries[0]['metadata']['summary'])
+                return f"SUMMARY: {summaries[0]['metadata']['summary']}"
+                        
+            except json.JSONDecodeError as e:
+                print(f"Error loading JSON: {e}")
+                raise NotImplementedError(f"Error loading JSON: {e}")
+        else:
+            print(f"The file '{input_file}' does not exist.")
+            raise NotImplementedError(f"VectorDBCollectionAdd: File '{input_file}' does not exist.")
+    
+    def _collectionAdd(self, url_csv:str) -> str:    
+        values_list = url_csv.split(",")
+        url_set = set(values_list)
+        datatype = type(url_set)
+        print(f"[VectorDBCollectionAdd***], received type {datatype} = {url_set}")
+        
+        db_status = {}
+        vectorstore = get_vector_store("you_tube")
+        
+        for vurl in url_set:
+            stripped_url = vurl.strip(" '")
+            source = stripped_url.split("watch?v=")[-1] # input can be with or without youtube.com     
+            number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
+            
+            db_status[vurl]={"SOURCE": source, "NUMBER OF RECORDS": number_of_ids}
+            #print(db_status)            
+            #check if this link https://www.youtube.com/watch?v=piYf4gDthjY is already in database
+            #check if this link https://www.youtube.com/watch?v=UfL7hqGBLAQ is already in database
+        return db_status
+    
+    def _run(self, query: str) -> str:
+        """Use the tool."""
+        return self._collectionAdd(query)
+    
+    async def _arun(self, query: str) -> str:
+        """Use the tool asynchronously."""
+        raise NotImplementedError("VectorDBCollectionAdd does not yet support async")
+    
 '''
 SummarizationTool summarizes any text and saves it to the file.
 TODO: Return all summaries, not only from the first link
@@ -202,22 +314,22 @@ class SummarizationTool(BaseTool):
                     print("Loaded transcript: ",doc.metadata)
                     loaded_transcriptions.append(doc)
                 
-                    # Split into chunks if too long
-                    splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
-                    
-                    # Creating two versions of the model so I can swap between gpt3.5 and gpt4
-                    llm3 = ChatOpenAI(temperature=0,
-                                    model_name="gpt-3.5-turbo-0613",
-                                    request_timeout = 180
-                                    )
+                # Split into chunks if too long
+                splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
+                
+                # Creating two versions of the model so I can swap between gpt3.5 and gpt4
+                llm3 = ChatOpenAI(temperature=0,
+                                model_name="gpt-3.5-turbo-0613",
+                                request_timeout = 180
+                                )
 
-                    llm4 = ChatOpenAI(temperature=0,
-                                    model_name="gpt-4-0613",
-                                    request_timeout = 180
-                                    )
-                    chain = load_summarize_chain(llm4, chain_type="map_reduce", verbose=False)
-                    doc.metadata['summary'] = chain.run(splitted_transcriptions)                    
-                    summaries.append(doc.to_dict())
+                llm4 = ChatOpenAI(temperature=0,
+                                model_name="gpt-4-0613",
+                                request_timeout = 180
+                                )
+                chain = load_summarize_chain(llm4, chain_type="map_reduce", verbose=False)
+                doc.metadata['summary'] = chain.run(splitted_transcriptions)                    
+                summaries.append(doc.to_dict())
                 
                 with open('yt_transcriptions.json', 'w', encoding='utf-8') as file:
                     json.dump(summaries, file, ensure_ascii=False, indent=4)
@@ -233,8 +345,6 @@ class SummarizationTool(BaseTool):
         else:
             print(f"The file '{input_file}' does not exist.")
             raise NotImplementedError(f"SummarizationTool: File '{input_file}' does not exist.")
-        
-        return "Summary of the transcript: this video talks about iPhone 15"
     
     def _run(self, query: str) -> str:
         """Use the tool."""
