@@ -197,20 +197,17 @@ class VectorDBCollectionAdd(BaseTool):
                 
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
                 
-                #openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-                #    model_name="text-embedding-ada-002"
-                #)       
+                print("load vectorstore index")
+                vectorstore = get_vector_store("you_tube")
                 
-                # Reconstruct Document objects from the loaded data
-                loaded_files = []
-                topics=[]
-                summaries = []
+                loaded_files = []   # page_content of files to be uploaded to vectorstore
+                topics={}           # extracted topics to be uploaded if exists
+                summaries = {}      # summaries to be uploaded if exists
                 temp_title=""
 
                 for doc_dict in loaded_serializable_file:
                     # Reconstruct Document objects from dictionaries
                     source = doc_dict['metadata']['source']
-                    print(f"Source: {source}")
                     
                     # Save topics if exists to you_tube_topics collection
                     if doc_dict['metadata']['topics']:
@@ -225,52 +222,33 @@ class VectorDBCollectionAdd(BaseTool):
                         doc_dict['metadata']['summary'] = True
                         
                     # Add when file was added to collection    
-                    doc_dict['metadata']['added_date_time'] = datetime.datetime.now()
+                    doc_dict['metadata']['added_date_time'] = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
                     
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
-                    #print("Loaded transcript: ",doc.metadata['title'])
-                    print("Loaded transcript: ",doc.metadata)
+                    
+                    # Check if transcript is not already in database
+                    number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
+                    if number_of_ids > 0:
+                        print(f"Transcript for source {source} is alaready in database using {number_of_ids} IDs")
+                    else:
+                        loaded_files.append(doc)
+                        print("Loaded file for upload: ",doc.metadata)
+                    
                     temp_title=doc.metadata['title']
-                    loaded_files.append(doc)
+                    
                 
                 # Split into chunks if too long
                 splitted_texts =  text_splitter.split_documents(loaded_files)
-                print("load vectorstore index")
-                vectorstore = get_vector_store("you_tube")
+                
                 print("Load splitted documents")
-                db = vectorstore.from_documents(splitted_texts, OpenAIEmbeddings())
+                # WORKS:
+                #id_list = vectorstore.add_documents(splitted_texts)
+                #print(f"ID List: {id_list}")
                 
                 number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
                 print(f"Number of ids stored {number_of_ids}")
-                """
-                collection = client.get_or_create_collection(
-                            name="you_tube", 
-                            embedding_function=openai_ef
-                        )
                 
-                texts = []
-
-                text_splitter = RecursiveCharacterTextSplitter(chunk_size=2000, chunk_overlap=0)
-
-                for url in youtube_url_list:
-                    loader = YoutubeLoader.from_youtube_url(url, add_video_info=True)
-                    result = loader.load()
-                    print(result[0].metadata)
-                    
-                    texts.extend(text_splitter.split_documents(result))
-                    
-                for text in texts:
-                    collection.add(
-                        ids=[str(uuid.uuid1())], 
-                        metadatas=text.metadata, 
-                        documents=text.page_content
-                    )
-                    
-                """
-                
-                #print(summaries[0]['metadata']['summary'])
-                #return f"SUMMARY: {summaries[0]['metadata']['summary']}"
-                return "Transcript saved to database"
+                return f"Inform user that transcript is saved to database using {number_of_ids} IDs"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
