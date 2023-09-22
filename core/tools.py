@@ -210,7 +210,7 @@ class VectorDBCollectionAdd(BaseTool):
                     # Reconstruct Document objects from dictionaries
                     source = doc_dict['metadata']['source']
                     
-                    # Save topics if exists to you_tube_topics collection
+                    # Save TOPICS if exists to you_tube_topics collection
                     if doc_dict['metadata']['topics']:
                         # Check if not exists in collection
                         number_of_ids = len(vectorstore_topics.get(where = {"source":source})["ids"])
@@ -223,9 +223,16 @@ class VectorDBCollectionAdd(BaseTool):
                         # Reset topics to just a number of topics since mtedata cannot contain list, thus save into separate collection
                         doc_dict['metadata']['topics'] = len(doc_dict['metadata']['topics'])
                     
-                    # Save summary if exists to you_tube_summaries collection
+                    # Save SUMMARY if exists to you_tube_summaries collection
                     if doc_dict['metadata']['summary']:
-                        summaries[source] = doc_dict['metadata']['summary']
+                        # Check if not exists in collection
+                        number_of_ids = len(vectorstore_summaries.get(where = {"source":source})["ids"])
+                        if number_of_ids > 0:
+                            print(f"Summary for source {source} are alaready in database using {number_of_ids} IDs")
+                            # Iterate over to double check if we have them all?
+                        else:
+                            summaries[source] = doc_dict['metadata']['summary']
+                            print(f"Summary for source {source} loaded")
                         # Reset summary to True/False indicating if summary is created 
                         doc_dict['metadata']['summary'] = True
                         
