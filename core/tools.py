@@ -67,7 +67,7 @@ class CustomYTSearchTool(BaseTool):
     def _search(self, subject:str, num_results) -> str:
         results = YoutubeSearch(subject,num_results).to_json()
         data = json.loads(results)
-        url_suffix_list = [video['url_suffix'] for video in data['videos']]
+        #url_suffix_list = [video['url_suffix'] for video in data['videos']]
         #return url_suffix_list
         with open("yt_search.json", "w") as json_file:
             json.dump(results, json_file)
@@ -177,6 +177,7 @@ class VectorDBCheckStatus(BaseTool):
 
 '''
 SummarizationTool summarizes any text and saves it to the file.
+TODO: Return all summaries, not only from the first link
 '''
 class SummarizationTool(BaseTool):
     name = "SummarizationTool"
@@ -204,7 +205,17 @@ class SummarizationTool(BaseTool):
                     # Split into chunks if too long
                     splitted_transcriptions =  text_splitter.split_documents(loaded_transcriptions)
                     
-                    chain = load_summarize_chain(OpenAI(temperature=0), chain_type="map_reduce", verbose=False)
+                    # Creating two versions of the model so I can swap between gpt3.5 and gpt4
+                    llm3 = ChatOpenAI(temperature=0,
+                                    model_name="gpt-3.5-turbo-0613",
+                                    request_timeout = 180
+                                    )
+
+                    llm4 = ChatOpenAI(temperature=0,
+                                    model_name="gpt-4-0613",
+                                    request_timeout = 180
+                                    )
+                    chain = load_summarize_chain(llm4, chain_type="map_reduce", verbose=False)
                     doc.metadata['summary'] = chain.run(splitted_transcriptions)                    
                     summaries.append(doc.to_dict())
                 
