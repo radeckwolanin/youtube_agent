@@ -198,6 +198,8 @@ class VectorDBCollectionAdd(BaseTool):
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
                 
                 vectorstore = get_vector_store("you_tube")
+                vectorstore_topics = get_vector_store("you_tube_topics")
+                vectorstore_summaries = get_vector_store("you_tube_summaries")
                 
                 loaded_files = []   # page_content of files to be uploaded to vectorstore
                 topics={}           # extracted topics to be uploaded if exists
@@ -210,7 +212,14 @@ class VectorDBCollectionAdd(BaseTool):
                     
                     # Save topics if exists to you_tube_topics collection
                     if doc_dict['metadata']['topics']:
-                        topics[source] = doc_dict['metadata']['topics']
+                        # Check if not exists in collection
+                        number_of_ids = len(vectorstore_topics.get(where = {"source":source})["ids"])
+                        if number_of_ids > 0:
+                            print(f"Topics for source {source} are alaready in database using {number_of_ids} IDs")
+                            # Iterate over to double check if we have them all?
+                        else:
+                            topics[source] = doc_dict['metadata']['topics']
+                            print(f"Topics for source {source} loaded: ",len(doc_dict['metadata']['topics']))                        
                         # Reset topics to just a number of topics since mtedata cannot contain list, thus save into separate collection
                         doc_dict['metadata']['topics'] = len(doc_dict['metadata']['topics'])
                     
