@@ -265,16 +265,17 @@ class VectorDBCollectionAdd(BaseTool):
                         # Get metadata from source
                         collection = vectorstore.get(where = {"source":source})
                         metadata = collection['metadatas'][0] # Select first metadata since all should be the same
+                        documents = []
                         idx=1
                         for topic in topics[source]:
+                            # TODO: Increment does NOT work, it is always 22
                             metadata['topic_num'] = idx; idx += 1
                             doc = Document(page_content=topic['description'], metadata=metadata)
-                        
-                        #print(f"\nONE DOC: {doc}\n")
-                        
-                        
-                    #id_list = vectorstore_topics.add_document(splitted_texts)
-                    #number_of_ids = len(id_list)
+                            documents.append(doc)
+                            
+                        id_list = vectorstore_topics.add_documents(documents)
+                        print(f"ID List: {id_list}")
+                    
                     number_of_ids = len(topics) #temp
                     to_return += f"- Topic for source {source} saved to database with {number_of_ids} IDs.\n"
                 
