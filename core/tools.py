@@ -262,14 +262,15 @@ class VectorDBCollectionAdd(BaseTool):
                 # Check if any topics to upload    
                 if len(topics) > 0:
                     for source in topics:
+                        # Get metadata from source
                         collection = vectorstore.get(where = {"source":source})
                         metadata = collection['metadatas'][0] # Select first metadata since all should be the same
-                        print(f"Source: {source} Metadata {metadata}\n")
+                        idx=1
                         for topic in topics[source]:
-                            #print(f"Individual Topic: {topic}")                            
+                            metadata['topic_num'] = idx; idx += 1
                             doc = Document(page_content=topic['description'], metadata=metadata)
                         
-                        print(f"\nONE DOC: {doc}\n")
+                        #print(f"\nONE DOC: {doc}\n")
                         
                         
                     #id_list = vectorstore_topics.add_document(splitted_texts)
