@@ -213,8 +213,7 @@ class VectorDBCollectionAdd(BaseTool):
                     
                     # Check if transcript is not already in database
                     number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
-                    if number_of_ids > 0:
-                        print(f"Transcript for source {source} is alaready in database using {number_of_ids} IDs")
+                    if number_of_ids > 0:                        
                         to_return += f"- Transcript for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
                     else:
                         loaded_files.append(doc)
@@ -224,8 +223,7 @@ class VectorDBCollectionAdd(BaseTool):
                     if doc_dict['metadata']['topics']:
                         # Check if not exists in collection
                         number_of_ids = len(vectorstore_topics.get(where = {"source":source})["ids"])
-                        if number_of_ids > 0:
-                            print(f"Topics for source {source} are alaready in database using {number_of_ids} IDs")
+                        if number_of_ids > 0:                            
                             to_return += f"- Topics for source {source} was not saved because they are alaready in database with {number_of_ids} IDs\n"
                             # Iterate over to double check if we have them all?
                         else:
@@ -238,8 +236,7 @@ class VectorDBCollectionAdd(BaseTool):
                     if doc_dict['metadata']['summary']:
                         # Check if not exists in collection
                         number_of_ids = len(vectorstore_summaries.get(where = {"source":source})["ids"])
-                        if number_of_ids > 0:
-                            print(f"Summary for source {source} are alaready in database using {number_of_ids} IDs")
+                        if number_of_ids > 0:                            
                             to_return += f"- Summary for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
                             # Iterate over to double check if we have them all?
                         else:
@@ -250,22 +247,40 @@ class VectorDBCollectionAdd(BaseTool):
                         
                     # Add when file was added to collection    
                     doc_dict['metadata']['added_date_time'] = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-                    
+                    # Create 
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
                     
                 
-                # Check if any files to load    
+                # Check if any files to upload    
                 if len(loaded_files) > 0:
                     # Split into chunks if too long text
                     splitted_texts =  text_splitter.split_documents(loaded_files)
                     id_list = vectorstore.add_documents(splitted_texts)
-                    print(f"ID List: {id_list}")
+                    number_of_ids = len(id_list)
+                    to_return += f"- Transcript for source {source} saved to database with {number_of_ids} IDs.\n"
+                    
+                # Check if any topics to upload    
+                if len(topics) > 0:
+                    for source in topics:
+                        collection = vectorstore.get(where = {"source":source})
+                        metadata = collection['metadatas'][0] # Select first metadata since all should be the same
+                        print(f"Source: {source} Metadata {metadata}\n")
+                        for topic in topics[source]:
+                            #print(f"Individual Topic: {topic}")                            
+                            doc = Document(page_content=topic['description'], metadata=metadata)
+                        
+                        print(f"\nONE DOC: {doc}\n")
+                        
+                        
+                    #id_list = vectorstore_topics.add_document(splitted_texts)
+                    #number_of_ids = len(id_list)
+                    number_of_ids = len(topics) #temp
+                    to_return += f"- Topic for source {source} saved to database with {number_of_ids} IDs.\n"
                 
                 #number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
                 #print(f"Number of ids stored {number_of_ids}")
                 print(to_return)
                 return f"Here is a summary:\n {to_return}"
-                #return f"Inform user that transcript is saved to database using {number_of_ids} IDs"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
