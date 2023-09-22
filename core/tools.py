@@ -194,6 +194,8 @@ class VectorDBCollectionAdd(BaseTool):
             try:
                 with open(input_file, 'r', encoding='utf-8') as file:
                     loaded_serializable_file = json.load(file)
+                    
+                to_return = ""
                 
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
                 
@@ -204,11 +206,19 @@ class VectorDBCollectionAdd(BaseTool):
                 loaded_files = []   # page_content of files to be uploaded to vectorstore
                 topics={}           # extracted topics to be uploaded if exists
                 summaries = {}      # summaries to be uploaded if exists
-                temp_title=""
 
                 for doc_dict in loaded_serializable_file:
                     # Reconstruct Document objects from dictionaries
                     source = doc_dict['metadata']['source']
+                    
+                    # Check if transcript is not already in database
+                    number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
+                    if number_of_ids > 0:
+                        print(f"Transcript for source {source} is alaready in database using {number_of_ids} IDs")
+                        to_return += f"- Transcript for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
+                    else:
+                        loaded_files.append(doc)
+                        print("Loaded file for upload: ",doc.metadata)
                     
                     # Save TOPICS if exists to you_tube_topics collection
                     if doc_dict['metadata']['topics']:
@@ -216,6 +226,7 @@ class VectorDBCollectionAdd(BaseTool):
                         number_of_ids = len(vectorstore_topics.get(where = {"source":source})["ids"])
                         if number_of_ids > 0:
                             print(f"Topics for source {source} are alaready in database using {number_of_ids} IDs")
+                            to_return += f"- Topics for source {source} was not saved because they are alaready in database with {number_of_ids} IDs\n"
                             # Iterate over to double check if we have them all?
                         else:
                             topics[source] = doc_dict['metadata']['topics']
@@ -229,6 +240,7 @@ class VectorDBCollectionAdd(BaseTool):
                         number_of_ids = len(vectorstore_summaries.get(where = {"source":source})["ids"])
                         if number_of_ids > 0:
                             print(f"Summary for source {source} are alaready in database using {number_of_ids} IDs")
+                            to_return += f"- Summary for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
                             # Iterate over to double check if we have them all?
                         else:
                             summaries[source] = doc_dict['metadata']['summary']
@@ -241,26 +253,19 @@ class VectorDBCollectionAdd(BaseTool):
                     
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
                     
-                    # Check if transcript is not already in database
-                    number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
-                    if number_of_ids > 0:
-                        print(f"Transcript for source {source} is alaready in database using {number_of_ids} IDs")
-                    else:
-                        loaded_files.append(doc)
-                        print("Loaded file for upload: ",doc.metadata)
-                    
-                    temp_title=doc.metadata['title']
-                    
+                
+                # Check if any files to load    
                 if len(loaded_files) > 0:
                     # Split into chunks if too long text
                     splitted_texts =  text_splitter.split_documents(loaded_files)
                     id_list = vectorstore.add_documents(splitted_texts)
                     print(f"ID List: {id_list}")
                 
-                number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
-                print(f"Number of ids stored {number_of_ids}")
-                
-                return f"Inform user that transcript is saved to database using {number_of_ids} IDs"
+                #number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
+                #print(f"Number of ids stored {number_of_ids}")
+                print(to_return)
+                return f"Here is a summary:\n {to_return}"
+                #return f"Inform user that transcript is saved to database using {number_of_ids} IDs"
                         
             except json.JSONDecodeError as e:
                 print(f"Error loading JSON: {e}")
