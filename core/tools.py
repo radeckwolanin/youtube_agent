@@ -10,10 +10,12 @@ from langchain.chains import create_extraction_chain
 from langchain.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 
-from langchain.vectorstores import ZepVectorStore
-from langchain.vectorstores.zep import CollectionConfig
-from langchain.embeddings import FakeEmbeddings
-from zep_python import ZepClient
+#from langchain.vectorstores import ZepVectorStore
+#from langchain.vectorstores.zep import CollectionConfig
+#from zep_python import ZepClient
+#from langchain.embeddings import FakeEmbeddings
+from langchain.embeddings.sentence_transformer import SentenceTransformerEmbeddings
+
 
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
@@ -35,8 +37,7 @@ TODO:
 - Based on extracted data, create new content/tweet
 """
 
-def get_vector_store(collection_name):
-    
+def get_vector_store(collection_name: str):    
     """
     # Zep VectorStore implementation. Mising `get` command which brakes code
     # Collection config is needed if we're creating a new Zep Collection
@@ -58,11 +59,16 @@ def get_vector_store(collection_name):
         host=os.environ.get("DB_HOST"), 
         port=os.environ.get("DB_PORT")
     )
+    
+    # create the open-source embedding function
+    embedding_function = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
+    # OpenAI embedding function
+    #embedding_function = OpenAIEmbeddings()
         
     index = Chroma(
         client=client,
         collection_name=collection_name,
-        embedding_function=OpenAIEmbeddings()
+        embedding_function=embedding_function
     )    
     
     return index
