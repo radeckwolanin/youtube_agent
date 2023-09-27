@@ -297,7 +297,6 @@ class VectorDBCollectionAdd(BaseTool):
                         documents = []
                         idx=1
                         for topic in topics[source]:
-                            # TODO: save topic_name and tag 
                             metadata['topic_num'] = idx; idx += 1
                             metadata['topic_name'] = topic['topic_name']
                             metadata['tag'] = topic['tag']
