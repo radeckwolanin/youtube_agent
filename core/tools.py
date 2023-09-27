@@ -37,11 +37,8 @@ TODO:
 
 def get_vector_store(collection_name):
     
-    #client = ZepClient(
-    #    api_url=os.environ.get("ZEP_API_URL"), 
-    #    api_key=os.environ.get("ZEP_API_KEY")
-    #)
-    # Might need collection config if not exists (bootstrap) plus Fake Embedddings (default)
+    """
+    # Zep VectorStore implementation. Mising `get` command which brakes code
     # Collection config is needed if we're creating a new Zep Collection
     config = CollectionConfig(
         name=collection_name,
@@ -49,8 +46,7 @@ def get_vector_store(collection_name):
         metadata={"created_by": "yt_agent"},
         is_auto_embedded=True,  # we'll have Zep embed our documents using its low-latency embedder
         embedding_dimensions=384  # this should match the model you've configured Zep to use.
-    )
-    
+    )    
     index = ZepVectorStore(
         collection_name=collection_name,
         config=config,
@@ -67,8 +63,7 @@ def get_vector_store(collection_name):
         client=client,
         collection_name=collection_name,
         embedding_function=OpenAIEmbeddings()
-    )
-    """
+    )    
     
     return index
 
