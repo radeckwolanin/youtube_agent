@@ -297,7 +297,10 @@ class VectorDBCollectionAdd(BaseTool):
                         documents = []
                         idx=1
                         for topic in topics[source]:
+                            # TODO: save topic_name and tag 
                             metadata['topic_num'] = idx; idx += 1
+                            metadata['topic_name'] = topic['topic_name']
+                            metadata['tag'] = topic['tag']
                             doc = Document(page_content=topic['description'], metadata=metadata.copy())
                             documents.append(doc)
                             
@@ -306,6 +309,21 @@ class VectorDBCollectionAdd(BaseTool):
                     
                     number_of_ids = len(topics) #temp
                     to_return += f"- Topic for source {source} saved to database with {number_of_ids} IDs.\n"
+                    
+                # Check if summary to upload    
+                if len(summaries) > 0:
+                    for source in summaries:
+                        # Get metadata from source
+                        collection = vectorstore.get(where = {"source":source})
+                        metadata = collection['metadatas'][0] # Select first metadata since all should be the same
+                        documents = []
+                        doc = Document(page_content=summaries[source], metadata=metadata.copy())
+                        documents.append(doc)
+                        id_list = vectorstore_summaries.add_documents(documents)
+                        #print(f"ID List: {id_list}")
+                    
+                    number_of_ids = len(summaries) #temp
+                    to_return += f"- Summary for source {source} saved to database with {number_of_ids} IDs.\n"
                 
                 #number_of_ids = len(vectorstore.get(where = {"title":temp_title})["ids"])
                 #print(f"Number of ids stored {number_of_ids}")

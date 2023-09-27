@@ -13,3 +13,4 @@ google-search-results
 wikipedia
 streamlit
 duckduckgo-search
+sentence-transformers
