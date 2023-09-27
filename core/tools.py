@@ -240,14 +240,6 @@ class VectorDBCollectionAdd(BaseTool):
                     # Reconstruct Document objects from dictionaries
                     source = doc_dict['metadata']['source']
                     
-                    # Check if transcript is not already in database
-                    number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
-                    if number_of_ids > 0:                        
-                        to_return += f"- Transcript for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
-                    else:
-                        loaded_files.append(doc)
-                        print("Loaded file for upload: ",doc.metadata)
-                    
                     # Save TOPICS if exists to you_tube_topics collection
                     if doc_dict['metadata']['topics']:
                         # Check if not exists in collection
@@ -276,8 +268,16 @@ class VectorDBCollectionAdd(BaseTool):
                         
                     # Add when file was added to collection    
                     doc_dict['metadata']['added_date_time'] = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
-                    # Create 
+                    # Create document
                     doc = Document(page_content=doc_dict['page_content'], metadata=doc_dict['metadata'])
+                    
+                    # Check if transcript is not already in database
+                    number_of_ids = len(vectorstore.get(where = {"source":source})["ids"])
+                    if number_of_ids > 0:                        
+                        to_return += f"- Transcript for source {source} was not saved because it is alaready in database with {number_of_ids} IDs\n"
+                    else:
+                        loaded_files.append(doc)
+                        print("Loaded file for upload: ",doc.metadata)
                     
                 
                 # Check if any files to upload    
@@ -297,13 +297,12 @@ class VectorDBCollectionAdd(BaseTool):
                         documents = []
                         idx=1
                         for topic in topics[source]:
-                            # TODO: Increment does NOT work, it is always 22
                             metadata['topic_num'] = idx; idx += 1
-                            doc = Document(page_content=topic['description'], metadata=metadata)
+                            doc = Document(page_content=topic['description'], metadata=metadata.copy())
                             documents.append(doc)
                             
                         id_list = vectorstore_topics.add_documents(documents)
-                        print(f"ID List: {id_list}")
+                        #print(f"ID List: {id_list}")
                     
                     number_of_ids = len(topics) #temp
                     to_return += f"- Topic for source {source} saved to database with {number_of_ids} IDs.\n"
