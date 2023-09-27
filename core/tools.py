@@ -185,7 +185,7 @@ class VectorDBCheckStatus(BaseTool):
         print(f"[VectorDBCheckStatus***], received type {datatype} = {url_set}")
         
         db_status = {}
-        vectorstore = get_vector_store("you_tube")
+        vectorstore = get_vector_store("videos")
         
         for vurl in url_set:
             stripped_url = vurl.strip(" '")
