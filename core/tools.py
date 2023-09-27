@@ -9,6 +9,12 @@ from langchain.chains.summarize import load_summarize_chain
 from langchain.chains import create_extraction_chain
 from langchain.document_loaders import YoutubeLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+from langchain.vectorstores import ZepVectorStore
+from langchain.vectorstores.zep import CollectionConfig
+from langchain.embeddings import FakeEmbeddings
+from zep_python import ZepClient
+
 from langchain.vectorstores import Chroma
 from langchain.embeddings import OpenAIEmbeddings
 from youtube_search import YoutubeSearch
@@ -31,6 +37,27 @@ TODO:
 
 def get_vector_store(collection_name):
     
+    #client = ZepClient(
+    #    api_url=os.environ.get("ZEP_API_URL"), 
+    #    api_key=os.environ.get("ZEP_API_KEY")
+    #)
+    # Might need collection config if not exists (bootstrap) plus Fake Embedddings (default)
+    # Collection config is needed if we're creating a new Zep Collection
+    config = CollectionConfig(
+        name=collection_name,
+        description="YouTube Agent vectorstore",
+        metadata={"created_by": "yt_agent"},
+        is_auto_embedded=True,  # we'll have Zep embed our documents using its low-latency embedder
+        embedding_dimensions=384  # this should match the model you've configured Zep to use.
+    )
+    
+    index = ZepVectorStore(
+        collection_name=collection_name,
+        config=config,
+        api_url=os.environ.get("ZEP_API_URL"),
+        api_key=os.environ.get("ZEP_API_KEY")
+    )
+    """
     client = chromadb.HttpClient(
         host=os.environ.get("DB_HOST"), 
         port=os.environ.get("DB_PORT")
@@ -41,6 +68,7 @@ def get_vector_store(collection_name):
         collection_name=collection_name,
         embedding_function=OpenAIEmbeddings()
     )
+    """
     
     return index
 
@@ -199,9 +227,9 @@ class VectorDBCollectionAdd(BaseTool):
                 
                 text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)  
                 
-                vectorstore = get_vector_store("you_tube")
-                vectorstore_topics = get_vector_store("you_tube_topics")
-                vectorstore_summaries = get_vector_store("you_tube_summaries")
+                vectorstore = get_vector_store("videos")
+                vectorstore_topics = get_vector_store("topics")
+                vectorstore_summaries = get_vector_store("summaries")
                 
                 loaded_files = []   # page_content of files to be uploaded to vectorstore
                 topics={}           # extracted topics to be uploaded if exists
